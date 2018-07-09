@@ -12,14 +12,15 @@ ball_img = cv2.resize(ball_img, (400, 400))
 
 
 def draw_image(img, frame, ox, oy):
-    height = frame.shape[0]
-    width = frame.shape[1]
-    alpha = img[oy:oy+height, ox:ox+width, 3] / 255.0
-    for c in range(0, 3):
-        color = img[oy:oy+height, ox:ox+width, c] * (1.0-alpha)
-        beta = frame[0:height, 0:width, c] * (1.0 - alpha)
+    height = img.shape[0]
+    width = img.shape[1]
+    alpha = img[0:height, 0:width, 3] / 255.0
 
-        frame[0:height, 0:width, c] = color + beta
+    for c in range(0, 3):
+        color = img[0:height, 0:width, c] * (1.0-alpha)
+        beta = frame[oy:oy+height, ox:ox+width, c] * (1.0 - alpha)
+
+        frame[oy:oy+height, ox:ox+width, c] = color + beta
 
 
 while(True):
@@ -32,11 +33,11 @@ while(True):
     if len(corners) > 0:
         cv2.aruco.drawDetectedMarkers(frame, corners, ids)
 
-        transform = cv2.getPerspectiveTransform(
-            np.array(corners), np.array([[0, 0], [frame.shape[0], 0], [frame.shape[0], frame.shape[1]], [0, frame.shape[1]]]))
-        warped_ball_img = cv2.warpPerspective(ball_img, transform)
+        transform = cv2.getPerspectiveTransform(corners[0], np.array([[0, 0], [frame.shape[0], 0], [frame.shape[0], frame.shape[1]], [0, frame.shape[1]]], np.float32))
+        warped_ball_img = cv2.warpPerspective(
+            ball_img, transform, dsize=(ball_img.shape[1], ball_img.shape[0]), flags=cv2.INTER_LINEAR)
 
-        draw_image(warped_ball_img, frame, 0, 0)
+        draw_image(warped_ball_img, frame, int(corners[0][0][0][0]), int(corners[0][0][0][1]))
 
     cv2.imshow('frame', frame)
     if cv2.waitKey(1) & 0xFF == ord('q'):
