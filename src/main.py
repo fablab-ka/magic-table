@@ -8,21 +8,21 @@ cap = cv2.VideoCapture(0)
 dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_6X6_250)
 
 ball_img = cv2.imread("ball.png", -1)
-ball_img = cv2.resize(ball_img, (400, 400))
+ball_img = cv2.resize(ball_img, (640, 480))
 
 
 def draw_image(img, frame, ox, oy):
     height = img.shape[0]
     if oy + height > frame.shape[0]:
-        height = frame.shape[0] - oy
+        height = max(height, frame.shape[0] - oy)
     width = img.shape[1]
     if ox + width > frame.shape[1]:
-        width = frame.shape[1] - ox
+        width = max(width, frame.shape[1] - ox)
 
     alpha = img[0:height, 0:width, 3] / 255.0
 
     for c in range(0, 3):
-        color = img[0:height, 0:width, c] * (alpha)
+        color = img[0:height, 0:width, c] * alpha
         beta = frame[oy:oy+height, ox:ox+width, c] * (1.0 - alpha)
 
         frame[oy:oy+height, ox:ox+width, c] = color + beta
