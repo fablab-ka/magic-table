@@ -13,11 +13,16 @@ ball_img = cv2.resize(ball_img, (400, 400))
 
 def draw_image(img, frame, ox, oy):
     height = img.shape[0]
+    if oy + height > frame.shape[0]:
+        height = frame.shape[0] - oy
     width = img.shape[1]
+    if ox + width > frame.shape[1]:
+        width = frame.shape[1] - ox
+
     alpha = img[0:height, 0:width, 3] / 255.0
 
     for c in range(0, 3):
-        color = img[0:height, 0:width, c] * (1.0-alpha)
+        color = img[0:height, 0:width, c] * (alpha)
         beta = frame[oy:oy+height, ox:ox+width, c] * (1.0 - alpha)
 
         frame[oy:oy+height, ox:ox+width, c] = color + beta
@@ -28,16 +33,26 @@ while(True):
 
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-    (corners, ids, n) = cv2.aruco.detectMarkers(gray, dictionary)
+    (markers, ids, n) = cv2.aruco.detectMarkers(gray, dictionary)
 
-    if len(corners) > 0:
-        cv2.aruco.drawDetectedMarkers(frame, corners, ids)
+    if len(markers) > 0:
+        cv2.aruco.drawDetectedMarkers(frame, markers, ids)
 
-        transform = cv2.getPerspectiveTransform(corners[0], np.array([[0, 0], [frame.shape[0], 0], [frame.shape[0], frame.shape[1]], [0, frame.shape[1]]], np.float32))
-        warped_ball_img = cv2.warpPerspective(
-            ball_img, transform, dsize=(ball_img.shape[1], ball_img.shape[0]), flags=cv2.INTER_LINEAR)
+        for marker in markers:
+            left = marker[0][0][0]
+            top = marker[0][0][1]
+            right = marker[0][1][0]
+            bottom = marker[0][2][1]
+            width = right - left
+            height = bottom - top
 
-        draw_image(warped_ball_img, frame, int(corners[0][0][0][0]), int(corners[0][0][0][1]))
+            transform = cv2.getPerspectiveTransform(
+                np.array([[0, 0], [ball_img.shape[1], 0], [ball_img.shape[1], ball_img.shape[0]], [0, ball_img.shape[0]]], np.float32),
+                marker
+            )
+            warped_ball_img = cv2.warpPerspective(
+                ball_img, transform, dsize=(ball_img.shape[1], ball_img.shape[0]), flags=cv2.INTER_LINEAR)
+            draw_image(warped_ball_img, frame, 0, 0)
 
     cv2.imshow('frame', frame)
     if cv2.waitKey(1) & 0xFF == ord('q'):
