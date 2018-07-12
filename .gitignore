@@ -1,2 +1,3 @@
 markers/
 .vscode/
+src/puppeteer-engine/node_modules

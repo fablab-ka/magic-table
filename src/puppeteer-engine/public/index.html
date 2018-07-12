@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Magic Table Renderer</title>
+
+    <style>
+    html, body { padding: 0; margin: 0; }
+    </style>
+</head>
+<body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/4.7.1/pixi.min.js"></script>
+    <script>
+        window.setTimeout(() => {
+
+            var app = new PIXI.Application(window.innerHeight, window.innerHeight, { backgroundColor: 0x1099bb });
+            app.renderer.view.style.position = "absolute";
+            app.renderer.view.style.display = "block";
+            app.renderer.autoResize = true;
+            app.renderer.resize(window.innerWidth, window.innerHeight);
+
+            window.addEventListener("resize", function () {
+                app.renderer.resize(window.innerWidth, window.innerHeight);
+            });
+
+            document.body.appendChild(app.view);
+
+            // create a new Sprite from an image path
+            var bunny = PIXI.Sprite.fromImage('bunny.png');
+
+            // center the sprite's anchor point
+            bunny.anchor.set(0.5);
+
+            // move the sprite to the center of the screen
+            bunny.x = app.screen.width / 2;
+            bunny.y = app.screen.height / 2;
+
+            app.stage.addChild(bunny);
+
+            const ws = new WebSocket('ws://localhost:9000');
+
+            let mediaRecorder;
+            ws.addEventListener('open', (e) => {
+                console.log('WebSocket Open', e);
+
+                const mediaStream = app.view.captureStream(30);
+
+                mediaRecorder = new MediaRecorder(mediaStream, {
+                    mimeType: 'video/webm;codecs=h264',
+                    videoBitsPerSecond: 3 * 1024 * 1024
+                });
+
+                mediaRecorder.addEventListener('dataavailable', (e) => {
+                    if (ws.readyState === ws.OPEN) {
+                        ws.send(e.data);
+                    } else {
+                        console.log('stream is already closed');
+                    }
+                });
+
+                mediaRecorder.addEventListener('stop', () => {
+                    if (ws.readyState === ws.OPEN) {
+                        ws.close();
+                    }
+                });
+
+                mediaRecorder.start(1000); // Start recording, and dump data every second
+            });
+
+            ws.addEventListener('close', (e) => {
+                console.log('WebSocket Close', e);
+                mediaRecorder.stop();
+            });
+
+            ws.addEventListener('error', (e) => {
+                console.log('WebSocket Close', e);
+            });
+
+            // Listen for animate update
+            app.ticker.add(function (delta) {
+                // just for fun, let's rotate mr rabbit a little
+                // delta is 1 if running at 100% performance
+                // creates frame-independent transformation
+                bunny.rotation += 0.1 * delta;
+
+
+            });
+
+        }, 1);
+    </script>
+</body>
+</html>
