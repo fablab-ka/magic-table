@@ -13,7 +13,13 @@ serverRunning = False
 
 
 def sendTransforms(clients, transforms):
-    transformMessage = 'all the transforms'
+    transformMessage = '['
+    for transform in transforms:
+        transformMessage += '{ left: ' + str(transform[0][0][0]) + ','
+        transformMessage += ' top: ' + str(transform[0][0][1]) + ','
+        transformMessage += ' right: ' + str(transform[0][1][0]) + ','
+        transformMessage += ' bottom: ' + str(transform[0][2][1]) + ' } '
+    transformMessage += ']'
 
     for client in clients:
         client.sendMessage(transformMessage)
@@ -40,20 +46,20 @@ def start_camera_analysis():
                 width = right - left
                 height = bottom - top
 
-                transform = cv2.getPerspectiveTransform(
-                    np.array([[0, 0], [ball_img.shape[1], 0], [
-                            ball_img.shape[1], ball_img.shape[0]], [0, ball_img.shape[0]]], np.float32),
-                    marker
-                )
+                # transform = cv2.getPerspectiveTransform(
+                #     np.array([[0, 0], [ball_img.shape[1], 0], [
+                #             ball_img.shape[1], ball_img.shape[0]], [0, ball_img.shape[0]]], np.float32),
+                #     marker
+                # )
 
-                transforms.append(clonedClients, transform)
+                transforms.append(marker)
 
             try:
                 clonedClients = clients[:]
             except:
                 continue
 
-            sendTransforms(transforms)
+            sendTransforms(clonedClients, transforms)
 
     print("Stopping Camera Analysis")
 
