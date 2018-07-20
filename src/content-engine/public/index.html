@@ -39,7 +39,7 @@
 
             app.stage.addChild(bunny);
 
-            const WEBSOCKET_URL = 'ws://localhost:3000/';
+            const WEBSOCKET_URL = 'ws://localhost:9000/';
             console.log('Connecting to WebSocket at', WEBSOCKET_URL);
             const ws = new WebSocket(WEBSOCKET_URL);
 
@@ -47,7 +47,7 @@
             ws.addEventListener('open', (e) => {
                 console.log('WebSocket Open', e);
 
-                const mediaStream = app.view.captureStream(30);
+                const mediaStream = app.view.captureStream(20);
 
                 mediaRecorder = new MediaRecorder(mediaStream, {
                     mimeType: 'video/webm;codecs=h264',
@@ -68,16 +68,22 @@
                     }
                 });
 
-                mediaRecorder.start(1000); // Start recording, and dump data every second
+                //mediaRecorder.start(1000/20); // Start recording, and dump data every second
             });
 
             ws.addEventListener('close', (e) => {
                 console.log('WebSocket Close', e);
-                mediaRecorder.stop();
+                if (mediaRecorder) {
+                    mediaRecorder.stop();
+                }
             });
 
             ws.addEventListener('error', (e) => {
                 console.log('WebSocket Close', e);
+            });
+
+            ws.addEventListener('message', (e) => {
+                console.log('WebSocket Message', e);
             });
 
             // Listen for animate update

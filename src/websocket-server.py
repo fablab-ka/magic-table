@@ -11,28 +11,49 @@ from SimpleWebSocketServer import SimpleWebSocketServer, WebSocket
 clients = []
 server = None
 ffmpeg = None
+serverRunning = False
+
+width = 1024
+height = 768
 
 
-class SimpleWSServer(WebSocket):
+def start_camera_analysis():
+    print("Starting Camera Analysis")
+
+    while serverRunning:
+        try:
+            clonedClients = clients[:]
+        except:
+            continue
+
+        for client in clonedClients:
+            client.sendMessage('it\'s a message')
+
+    print("Stopping Camera Analysis")
+
+
+class SimpleWebSocket(WebSocket):
 
     def handleMessage(self):
         print("WS message", len(self.data))
 
-        #bmpData = ffmpeg.communicate(input=self.data)[0]
+        #bmpData, errors = ffmpeg.communicate(input=self.data)
 
-        try:
+        #try:
             #print("bmpData read", len(bmpData))
-            #image = cv2.imdecode(np.fromstring(bmpData, dtype=np.uint8), 1)
+            #image = cv2.imdecode(np.frombuffer(bmpData, dtype=np.uint8), 1)
 
-            nparr = np.asarray(self.data, np.uint8)
+            #nparr = np.asarray(self.data, np.uint8)
 
-            image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-            print("img decoded", image.shape)
+            #print(nparr)
 
-            cv2.imshow('window', image)
-        except Exception as e:
-            print(e)
-            traceback.print_exc(file=sys.stdout)
+            #image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            #print("img decoded", image.shape)
+
+            #cv2.imshow('window', image)
+        # except Exception as e:
+        #     print(e)
+        #     traceback.print_exc(file=sys.stdout)
 
     def handleConnected(self):
         print("WS connected")
@@ -42,19 +63,30 @@ class SimpleWSServer(WebSocket):
         print("WS disconnected")
         clients.remove(self)
 
+
 def run_server():
-    global server, ffmpeg
+    global server, ffmpeg, serverRunning
 
     print("Starting ffmpeg")
     ffmpegCmd = ['ffmpeg', '-i', '-', '-f', 'rawvideo',
                  '-vcodec', 'bmp', '-vf', 'fps=5', '-']
 
-    ffmpeg = sp.Popen(ffmpegCmd, stdin=sp.PIPE, stdout=sp.PIPE)
+    # ffmpeg = sp.Popen(ffmpegCmd, stdin=sp.PIPE, stdout=sp.PIPE)
 
     print("Starting Server")
 
-    server = SimpleWebSocketServer('', 9000, SimpleWSServer, selectInterval=(1000.0 / 15) / 1000)
-    server.serveforever()
+    server = SimpleWebSocketServer('', 9000, SimpleWebSocket, selectInterval=(1000.0 / 15) / 1000)
+
+    serverRunning = True
+
+    analysisThread = threading.Thread(target=start_camera_analysis)
+    analysisThread.start()
+
+    try:
+        server.serveforever()
+    except KeyboardInterrupt:
+        serverRunning = False
+        analysisThread.join()
 
 
 def main():
