@@ -40,23 +40,23 @@ const wss = new WebSocketServer({
 wss.on('connection', (ws, req) => {
   console.log('WS Connection reveiced');
 
-  const rtmpUrl = '';
+  const rtmpUrl = 'rtp://127.0.0.1:1234';
   console.log('Target RTMP URL:', rtmpUrl);
 
   // Launch FFmpeg to handle all appropriate transcoding, muxing, and RTMP.
   // If 'ffmpeg' isn't in your path, specify the full path to the ffmpeg binary.
   const ffmpeg = child_process.spawn('ffmpeg', [
-    // Facebook requires an audio track, so we create a silent one here.
     // Remove this line, as well as `-shortest`, if you send audio from the browser.
-    '-f', 'lavfi', '-i', 'anullsrc',
+    //'-f', 'lavfi', '-i', 'anullsrc',
 
     // FFmpeg will read input video from STDIN
     '-i', '-',
 
+
     // Because we're using a generated audio source which never ends,
     // specify that we'll stop at end of other input.  Remove this line if you
     // send audio from the browser.
-    '-shortest',
+    //'-shortest',
 
     // If we're encoding H.264 in-browser, we can set the video codec to 'copy'
     // so that we don't waste any CPU and quality with unnecessary transcoding.
@@ -66,10 +66,10 @@ wss.on('connection', (ws, req) => {
 
     // AAC audio is required for Facebook Live.  No browser currently supports
     // encoding AAC, so we must transcode the audio to AAC here on the server.
-    '-acodec', 'aac',
+    //'-acodec', 'aac',
 
     // FLV is the container format used in conjunction with RTMP
-    '-f', 'flv',
+    '-f', 'rtp',
 
     // The output RTMP URL.
     // For debugging, you could set this to a filename like 'test.flv', and play

@@ -39,7 +39,9 @@
 
             app.stage.addChild(bunny);
 
-            const ws = new WebSocket('ws://localhost:9000');
+            const WEBSOCKET_URL = 'ws://localhost:3000/';
+            console.log('Connecting to WebSocket at', WEBSOCKET_URL);
+            const ws = new WebSocket(WEBSOCKET_URL);
 
             let mediaRecorder;
             ws.addEventListener('open', (e) => {
