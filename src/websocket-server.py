@@ -4,30 +4,56 @@ import cv2
 import sys
 import traceback
 import numpy as np
-import subprocess as sp
 
 from SimpleWebSocketServer import SimpleWebSocketServer, WebSocket
 
 clients = []
 server = None
-ffmpeg = None
 serverRunning = False
 
-width = 1024
-height = 768
 
+def sendTransforms(clients, transforms):
+    transformMessage = 'all the transforms'
+
+    for client in clients:
+        client.sendMessage(transformMessage)
 
 def start_camera_analysis():
     print("Starting Camera Analysis")
 
-    while serverRunning:
-        try:
-            clonedClients = clients[:]
-        except:
-            continue
+    cap = cv2.VideoCapture(0)
+    dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_6X6_250)
 
-        for client in clonedClients:
-            client.sendMessage('it\'s a message')
+    while serverRunning:
+
+        ret, frame = cap.read()
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        (markers, ids, n) = cv2.aruco.detectMarkers(gray, dictionary)
+        if len(markers) > 0:
+            transforms = []
+
+            for marker in markers:
+                left = marker[0][0][0]
+                top = marker[0][0][1]
+                right = marker[0][1][0]
+                bottom = marker[0][2][1]
+                width = right - left
+                height = bottom - top
+
+                transform = cv2.getPerspectiveTransform(
+                    np.array([[0, 0], [ball_img.shape[1], 0], [
+                            ball_img.shape[1], ball_img.shape[0]], [0, ball_img.shape[0]]], np.float32),
+                    marker
+                )
+
+                transforms.append(clonedClients, transform)
+
+            try:
+                clonedClients = clients[:]
+            except:
+                continue
+
+            sendTransforms(transforms)
 
     print("Stopping Camera Analysis")
 
@@ -65,13 +91,7 @@ class SimpleWebSocket(WebSocket):
 
 
 def run_server():
-    global server, ffmpeg, serverRunning
-
-    print("Starting ffmpeg")
-    ffmpegCmd = ['ffmpeg', '-i', '-', '-f', 'rawvideo',
-                 '-vcodec', 'bmp', '-vf', 'fps=5', '-']
-
-    # ffmpeg = sp.Popen(ffmpegCmd, stdin=sp.PIPE, stdout=sp.PIPE)
+    global server, serverRunning
 
     print("Starting Server")
 
@@ -87,23 +107,6 @@ def run_server():
     except KeyboardInterrupt:
         serverRunning = False
         analysisThread.join()
-
-
-def main():
-
-    run_event = threading.Event()
-    run_event.set()
-
-    t = threading.Thread(target=run_server)
-    t.start()
-
-    try:
-        while 1:
-            time.sleep(.1)
-    except KeyboardInterrupt:
-        run_event.clear()
-        t.join()
-        print("threads successfully closed")
 
 
 if __name__ == '__main__':
