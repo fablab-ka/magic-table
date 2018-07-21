@@ -43,39 +43,12 @@
             console.log('Connecting to WebSocket at', WEBSOCKET_URL);
             const ws = new WebSocket(WEBSOCKET_URL);
 
-            let mediaRecorder;
             ws.addEventListener('open', (e) => {
                 console.log('WebSocket Open', e);
-
-                const mediaStream = app.view.captureStream(20);
-
-                mediaRecorder = new MediaRecorder(mediaStream, {
-                    mimeType: 'video/webm;codecs=h264',
-                    videoBitsPerSecond: 3 * 1024 * 1024
-                });
-
-                mediaRecorder.addEventListener('dataavailable', (e) => {
-                    if (ws.readyState === ws.OPEN) {
-                        ws.send(e.data);
-                    } else {
-                        console.log('stream is already closed');
-                    }
-                });
-
-                mediaRecorder.addEventListener('stop', () => {
-                    if (ws.readyState === ws.OPEN) {
-                        ws.close();
-                    }
-                });
-
-                //mediaRecorder.start(1000/20); // Start recording, and dump data every second
             });
 
             ws.addEventListener('close', (e) => {
                 console.log('WebSocket Close', e);
-                if (mediaRecorder) {
-                    mediaRecorder.stop();
-                }
             });
 
             ws.addEventListener('error', (e) => {
@@ -83,11 +56,21 @@
             });
 
             ws.addEventListener('message', (e) => {
-                console.log('WebSocket Message', e);
+                //console.log('WebSocket Message', e);
                 if (e.data instanceof Blob) {
                     const reader = new FileReader()
-                    reader.onload = () =>
-                        console.log(reader.result);
+                    reader.onload = () => {
+                        const markers = JSON.parse(reader.result);
+                        for (const i in markers) {
+                            const data = markers[i];
+                            const { ids, marker, transform } = data;
+
+                            if (ids[0] == 1) {
+                                bunny.x = marker[0][0][0];
+                                bunny.y = marker[0][0][1];
+                            }
+                        }
+                    };
                     reader.readAsText(e.data);
                 }
             });
@@ -98,8 +81,6 @@
                 // delta is 1 if running at 100% performance
                 // creates frame-independent transformation
                 bunny.rotation += 0.1 * delta;
-
-
             });
 
         }, 1);

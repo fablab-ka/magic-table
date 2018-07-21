@@ -4,62 +4,63 @@ import cv2
 import sys
 import traceback
 import numpy as np
-
+import json
 from SimpleWebSocketServer import SimpleWebSocketServer, WebSocket
 
 clients = []
 server = None
 serverRunning = False
 
-
-def sendTransforms(clients, transforms):
-    transformMessage = '['
-    for transform in transforms:
-        transformMessage += '{ left: ' + str(transform[0][0][0]) + ','
-        transformMessage += ' top: ' + str(transform[0][0][1]) + ','
-        transformMessage += ' right: ' + str(transform[0][1][0]) + ','
-        transformMessage += ' bottom: ' + str(transform[0][2][1]) + ' } '
-    transformMessage += ']'
-
+def send_transforms(clients, transforms):
+    message = json.dumps(transforms)
     for client in clients:
-        client.sendMessage(transformMessage)
+        client.sendMessage(message)
 
 def start_camera_analysis():
     print("Starting Camera Analysis")
 
     cap = cv2.VideoCapture(0)
     dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_6X6_250)
+    [width, height] = (800, 600)
 
     while serverRunning:
-
         ret, frame = cap.read()
+
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         (markers, ids, n) = cv2.aruco.detectMarkers(gray, dictionary)
         if len(markers) > 0:
+            cv2.aruco.drawDetectedMarkers(frame, markers, ids)
+
             transforms = []
 
-            for marker in markers:
-                left = marker[0][0][0]
-                top = marker[0][0][1]
-                right = marker[0][1][0]
-                bottom = marker[0][2][1]
-                width = right - left
-                height = bottom - top
+            for i in range(len(markers)):
+                marker = markers[i]
+                markerIds = ids[i]
+                transform = cv2.getPerspectiveTransform(
+                    np.array(
+                        [[0, 0], [width, 0], [width, height], [0, height]],
+                        np.float32
+                    ),
+                    marker
+                 )
 
-                # transform = cv2.getPerspectiveTransform(
-                #     np.array([[0, 0], [ball_img.shape[1], 0], [
-                #             ball_img.shape[1], ball_img.shape[0]], [0, ball_img.shape[0]]], np.float32),
-                #     marker
-                # )
-
-                transforms.append(marker)
+                transforms.append({
+                    'marker': marker.tolist(),
+                    'transform': transform.tolist(),
+                    'ids': markerIds.tolist()
+                })
 
             try:
                 clonedClients = clients[:]
             except:
                 continue
 
-            sendTransforms(clonedClients, transforms)
+            send_transforms(clonedClients, transforms)
+
+        cv2.imshow('frame', frame)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            continue
+
 
     print("Stopping Camera Analysis")
 

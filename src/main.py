@@ -28,7 +28,7 @@ def draw_image(img, frame, ox, oy):
         frame[oy:oy+height, ox:ox+width, c] = color + beta
 
 
-while(True):
+while (True):
     ret, frame = cap.read()
 
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
