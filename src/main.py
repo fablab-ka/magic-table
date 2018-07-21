@@ -1,65 +1,120 @@
-import numpy as np
+import threading
+import time
 import cv2
+import sys
+import traceback
+import numpy as np
+import json
+from SimpleWebSocketServer import SimpleWebSocketServer, WebSocket
 
-cap = cv2.VideoCapture(0)
-#dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_5X5_1000)
-#dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
-#dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_ARUCO_ORIGINAL)
-dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_6X6_250)
+clients = []
+server = None
+serverRunning = False
 
-ball_img = cv2.imread("ball.png", -1)
-ball_img = cv2.resize(ball_img, (640, 480))
+def send_transforms(clients, transforms):
+    message = json.dumps(transforms)
+    for client in clients:
+        client.sendMessage(message)
 
+def start_camera_analysis():
+    print("Starting Camera Analysis")
 
-def draw_image(img, frame, ox, oy):
-    height = img.shape[0]
-    if oy + height > frame.shape[0]:
-        height = max(height, frame.shape[0] - oy)
-    width = img.shape[1]
-    if ox + width > frame.shape[1]:
-        width = max(width, frame.shape[1] - ox)
+    cap = cv2.VideoCapture(0)
+    dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_6X6_250)
+    [width, height] = (800, 600)
 
-    alpha = img[0:height, 0:width, 3] / 255.0
+    while serverRunning:
+        ret, frame = cap.read()
 
-    for c in range(0, 3):
-        color = img[0:height, 0:width, c] * alpha
-        beta = frame[oy:oy+height, ox:ox+width, c] * (1.0 - alpha)
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        (markers, ids, n) = cv2.aruco.detectMarkers(gray, dictionary)
+        if len(markers) > 0:
+            cv2.aruco.drawDetectedMarkers(frame, markers, ids)
 
-        frame[oy:oy+height, ox:ox+width, c] = color + beta
+            transforms = []
 
+            for i in range(len(markers)):
+                marker = markers[i]
+                markerIds = ids[i]
+                transform = cv2.getPerspectiveTransform(
+                    np.array(
+                        [[0, 0], [width, 0], [width, height], [0, height]],
+                        np.float32
+                    ),
+                    marker
+                 )
 
-while (True):
-    ret, frame = cap.read()
+                transforms.append({
+                    'marker': marker.tolist(),
+                    'transform': transform.tolist(),
+                    'ids': markerIds.tolist()
+                })
 
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            try:
+                clonedClients = clients[:]
+            except:
+                continue
 
-    (markers, ids, n) = cv2.aruco.detectMarkers(gray, dictionary)
+            send_transforms(clonedClients, transforms)
 
-    if len(markers) > 0:
-        cv2.aruco.drawDetectedMarkers(frame, markers, ids)
-
-        for marker in markers:
-            left = marker[0][0][0]
-            top = marker[0][0][1]
-            right = marker[0][1][0]
-            bottom = marker[0][2][1]
-            width = right - left
-            height = bottom - top
-
-            transform = cv2.getPerspectiveTransform(
-                np.array([[0, 0], [ball_img.shape[1], 0], [ball_img.shape[1], ball_img.shape[0]], [0, ball_img.shape[0]]], np.float32),
-                marker
-            )
-            warped_ball_img = cv2.warpPerspective(
-                ball_img, transform, dsize=(ball_img.shape[1], ball_img.shape[0]), flags=cv2.INTER_LINEAR)
-            draw_image(warped_ball_img, frame, 0, 0)
-
-    cv2.imshow('frame', frame)
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
-
-# When everything done, release the capture
-cap.release()
-cv2.destroyAllWindows()
+        cv2.imshow('frame', frame)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            continue
 
 
+    print("Stopping Camera Analysis")
+
+
+class SimpleWebSocket(WebSocket):
+
+    def handleMessage(self):
+        print("WS message", len(self.data))
+
+        #bmpData, errors = ffmpeg.communicate(input=self.data)
+
+        #try:
+            #print("bmpData read", len(bmpData))
+            #image = cv2.imdecode(np.frombuffer(bmpData, dtype=np.uint8), 1)
+
+            #nparr = np.asarray(self.data, np.uint8)
+
+            #print(nparr)
+
+            #image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            #print("img decoded", image.shape)
+
+            #cv2.imshow('window', image)
+        # except Exception as e:
+        #     print(e)
+        #     traceback.print_exc(file=sys.stdout)
+
+    def handleConnected(self):
+        print("WS connected")
+        clients.append(self)
+
+    def handleClose(self):
+        print("WS disconnected")
+        clients.remove(self)
+
+
+def run_server():
+    global server, serverRunning
+
+    print("Starting Server")
+
+    server = SimpleWebSocketServer('', 9000, SimpleWebSocket, selectInterval=(1000.0 / 15) / 1000)
+
+    serverRunning = True
+
+    analysisThread = threading.Thread(target=start_camera_analysis)
+    analysisThread.start()
+
+    try:
+        server.serveforever()
+    except KeyboardInterrupt:
+        serverRunning = False
+        analysisThread.join()
+
+
+if __name__ == '__main__':
+    run_server()
