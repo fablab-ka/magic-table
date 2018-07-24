@@ -11,79 +11,107 @@
     </style>
 </head>
 <body>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/4.7.1/pixi.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/4.8.1/pixi.js"></script>
     <script>
-        window.setTimeout(() => {
-
-            var app = new PIXI.Application(window.innerHeight, window.innerHeight, { backgroundColor: 0x1099bb });
-            app.renderer.view.style.position = "absolute";
-            app.renderer.view.style.display = "block";
-            app.renderer.autoResize = true;
+        var app = new PIXI.Application(window.innerHeight, window.innerHeight, { backgroundColor: 0x1099bb });
+        app.renderer.view.style.position = "absolute";
+        app.renderer.view.style.display = "block";
+        app.renderer.autoResize = true;
+        app.renderer.resize(window.innerWidth, window.innerHeight)
+        window.addEventListener("resize", () => {
             app.renderer.resize(window.innerWidth, window.innerHeight);
+        });
+        window.setTimeout(() => app.renderer.resize(window.innerWidth, window.innerHeight), 1000);
 
-            window.addEventListener("resize", function () {
-                app.renderer.resize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(app.view);
+
+        var loader = new PIXI.loaders.Loader();
+        loader
+            .add('tileset_image', 'towerDefense.svg')
+            .add('tileset', 'towerDefense.json')
+            .load((loader, resources) => {
+                const spritesheet_texture = resources.tileset_image.texture;
+                spritesheet_texture.sourceScale = 1;
+                const spriteSheet = new PIXI.Spritesheet(spritesheet_texture, resources.tileset.data);
+                spriteSheet.parse(() => {
+
+                    const tiles = [
+                        'edge_dirt_grass_nw',
+                        'edge_dirt_grass_n',
+                        'edge_dirt_grass_no',
+                        'edge_dirt_grass_w',
+                        'grass',
+                        'edge_dirt_grass_o',
+                        'edge_dirt_grass_sw',
+                        'edge_dirt_grass_s',
+                        'edge_dirt_grass_so',
+                        'dirt'
+                    ];
+                    for (var i in tiles) {
+                        const tileName = tiles[i];
+                        let tile = new PIXI.Sprite(PIXI.utils.TextureCache[tileName]);
+                        tile.x = (i%3) * 48;
+                        tile.y = Math.floor(i/3)*48;
+                        app.stage.addChild(tile);
+                    }
+                })
             });
 
-            document.body.appendChild(app.view);
+        // create a new Sprite from an image path
+        var bunny = PIXI.Sprite.fromImage('bunny.png');
 
-            // create a new Sprite from an image path
-            var bunny = PIXI.Sprite.fromImage('bunny.png');
+        // center the sprite's anchor point
+        bunny.anchor.set(0.5);
 
-            // center the sprite's anchor point
-            bunny.anchor.set(0.5);
+        // move the sprite to the center of the screen
+        bunny.x = app.screen.width / 2;
+        bunny.y = app.screen.height / 2;
 
-            // move the sprite to the center of the screen
-            bunny.x = app.screen.width / 2;
-            bunny.y = app.screen.height / 2;
+        app.stage.addChild(bunny);
 
-            app.stage.addChild(bunny);
+        const WEBSOCKET_URL = 'ws://localhost:9000/';
+        console.log('Connecting to WebSocket at', WEBSOCKET_URL);
+        const ws = new WebSocket(WEBSOCKET_URL);
 
-            const WEBSOCKET_URL = 'ws://localhost:9000/';
-            console.log('Connecting to WebSocket at', WEBSOCKET_URL);
-            const ws = new WebSocket(WEBSOCKET_URL);
+        ws.addEventListener('open', (e) => {
+            console.log('WebSocket Open', e);
+        });
 
-            ws.addEventListener('open', (e) => {
-                console.log('WebSocket Open', e);
-            });
+        ws.addEventListener('close', (e) => {
+            console.log('WebSocket Close', e);
+        });
 
-            ws.addEventListener('close', (e) => {
-                console.log('WebSocket Close', e);
-            });
+        ws.addEventListener('error', (e) => {
+            console.log('WebSocket Close', e);
+        });
 
-            ws.addEventListener('error', (e) => {
-                console.log('WebSocket Close', e);
-            });
+        ws.addEventListener('message', (e) => {
+            //console.log('WebSocket Message', e);
+            if (e.data instanceof Blob) {
+                const reader = new FileReader()
+                reader.onload = () => {
+                    const markers = JSON.parse(reader.result);
+                    for (const i in markers) {
+                        const data = markers[i];
+                        const { ids, marker, transform } = data;
 
-            ws.addEventListener('message', (e) => {
-                //console.log('WebSocket Message', e);
-                if (e.data instanceof Blob) {
-                    const reader = new FileReader()
-                    reader.onload = () => {
-                        const markers = JSON.parse(reader.result);
-                        for (const i in markers) {
-                            const data = markers[i];
-                            const { ids, marker, transform } = data;
-
-                            if (ids[0] == 1) {
-                                bunny.x = marker[0][0][0];
-                                bunny.y = marker[0][0][1];
-                            }
+                        if (ids[0] == 1) {
+                            bunny.x = marker[0][0][0];
+                            bunny.y = marker[0][0][1];
                         }
-                    };
-                    reader.readAsText(e.data);
-                }
-            });
+                    }
+                };
+                reader.readAsText(e.data);
+            }
+        });
 
-            // Listen for animate update
-            app.ticker.add(function (delta) {
-                // just for fun, let's rotate mr rabbit a little
-                // delta is 1 if running at 100% performance
-                // creates frame-independent transformation
-                bunny.rotation += 0.1 * delta;
-            });
-
-        }, 1);
+        // Listen for animate update
+        app.ticker.add(function (delta) {
+            // just for fun, let's rotate mr rabbit a little
+            // delta is 1 if running at 100% performance
+            // creates frame-independent transformation
+            bunny.rotation += 0.1 * delta;
+        });
     </script>
 </body>
 </html>
