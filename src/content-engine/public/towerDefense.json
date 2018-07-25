@@ -12,13 +12,13 @@
         "edge_dirt_grass_nw": {
             "frame": { "x": 24, "y": 24, "w": 48, "h": 48 }
         },
-        "edge_dirt_grass_no": {
+        "edge_dirt_grass_ne": {
             "frame": { "x": 120, "y": 24, "w": 48, "h": 48 }
         },
         "edge_dirt_grass_sw": {
             "frame": { "x": 24, "y": 120, "w": 48, "h": 48 }
         },
-        "edge_dirt_grass_so": {
+        "edge_dirt_grass_se": {
             "frame": { "x": 120, "y": 120, "w": 48, "h": 48 }
         },
         "edge_dirt_grass_n": {
@@ -27,11 +27,14 @@
         "edge_dirt_grass_w": {
             "frame": { "x": 24, "y": 72, "w": 48, "h": 48 }
         },
-        "edge_dirt_grass_o": {
+        "edge_dirt_grass_e": {
             "frame": { "x": 120, "y": 72, "w": 48, "h": 48 }
         },
         "edge_dirt_grass_s": {
             "frame": { "x": 72, "y": 120, "w": 48, "h": 48 }
+        },
+        "sand": {
+            "frame": { "x": 0, "y": 384, "w": 48, "h": 48 }
         }
     }
 }

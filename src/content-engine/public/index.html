@@ -13,105 +13,220 @@
 <body>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/4.8.1/pixi.js"></script>
     <script>
-        var app = new PIXI.Application(window.innerHeight, window.innerHeight, { backgroundColor: 0x1099bb });
-        app.renderer.view.style.position = "absolute";
-        app.renderer.view.style.display = "block";
-        app.renderer.autoResize = true;
-        app.renderer.resize(window.innerWidth, window.innerHeight)
-        window.addEventListener("resize", () => {
-            app.renderer.resize(window.innerWidth, window.innerHeight);
-        });
-        window.setTimeout(() => app.renderer.resize(window.innerWidth, window.innerHeight), 1000);
+        let app;
+        const FieldType = {
+            0: 'dirt',
+            1: 'grass',
+        };
+        const AdjourningTilePostfixMap = {
+            0: { 0: 'c', 1: 'e' },
+            1: { 0: 's', 1: 'se' }
+        };
+        const DirectionInversionMap = {
+            'nw': 'se', 'n': 's', 'ne': 'sw',
+             'w':  'e', 'c': 'c',  'e':  'w',
+            'sw': 'ne', 's': 'n', 'se': 'nw',
+        };
+        const DirectionFlag = [
+            [1,2,4],
+            [128, 0, 8],
+            [64, 32, 16]
+        ];
 
-        document.body.appendChild(app.view);
+        /*
+              1  2    4
+            128  X    8
+             64  32  16
+         */
+        const DirectionHashList = {
+             'nw': [1, 130, 131, 135, 134, 67, 66],
+              'n': [2, 5, 3, 6, 7],
+             'ne': [4, 10, 14, 15, 19],
+              'w': [128, 129, 65, 172, 173],
+              'e': [8, 12, 24, 28, 20],
+             'sw': [64, 160, 224, 33],
+              's': [32, 96, 48, 80, 112],
+             'se': [16, 56, 40],
+              'c': [255, 68, 17, 136, 34, 0]
+        };
+        const DirectionHashMap = {};
+        for (const direction in DirectionHashList) {
+            for (const i in DirectionHashList[direction]) {
+                const hash = DirectionHashList[direction][i];
+                DirectionHashMap[hash] = direction;
+            }
+        }
+        const DirectionOffsetMap = {
+            'nw': [-1, -1],
+            'n': [0, -1],
+            'ne': [1, -1],
+            'w': [-1, 0],
+            'e': [1, 0],
+            'sw': [-1, 1],
+            's': [0, 1],
+            'se': [1, 1],
+            'nwi': [1, -1],
+            'nei': [-1, -1],
+            'swi': [1, 1],
+            'sei': [-1, 1],
+            'c': [0, 0]
+        };
 
-        var loader = new PIXI.loaders.Loader();
-        loader
-            .add('tileset_image', 'towerDefense.svg')
-            .add('tileset', 'towerDefense.json')
-            .load((loader, resources) => {
-                const spritesheet_texture = resources.tileset_image.texture;
-                spritesheet_texture.sourceScale = 1;
-                const spriteSheet = new PIXI.Spritesheet(spritesheet_texture, resources.tileset.data);
-                spriteSheet.parse(() => {
+        function getAdjourningTileType(mapData, posX, posY) {
+            let result = 0;
 
-                    const tiles = [
-                        'edge_dirt_grass_nw',
-                        'edge_dirt_grass_n',
-                        'edge_dirt_grass_no',
-                        'edge_dirt_grass_w',
-                        'grass',
-                        'edge_dirt_grass_o',
-                        'edge_dirt_grass_sw',
-                        'edge_dirt_grass_s',
-                        'edge_dirt_grass_so',
-                        'dirt'
-                    ];
-                    for (var i in tiles) {
-                        const tileName = tiles[i];
-                        let tile = new PIXI.Sprite(PIXI.utils.TextureCache[tileName]);
-                        tile.x = (i%3) * 48;
-                        tile.y = Math.floor(i/3)*48;
-                        app.stage.addChild(tile);
+            if (posX >= 0 && posX < mapData.meta.size.w) {
+                if (posY >= 0 && posY < mapData.meta.size.h) {
+                    result = mapData.fields[posY][posX];
+                    result = result;
+                }
+            }
+
+            return result;
+        }
+
+        function getAdjourningTileTypeByDirection(mapData, mx, my, direction) {
+            const posX = DirectionOffsetMap[direction][0];
+            const posY = DirectionOffsetMap[direction][1];
+            return getAdjourningTileType(mapData, posX, posY)
+        }
+
+        function generateTextureName(mainFieldType, adjourningTileType, direction) {
+            const mainFieldTypeName = FieldType[mainFieldType];
+            let result = mainFieldTypeName;
+            if (direction !== 'c') {
+                const adjourningTileTypeName = FieldType[adjourningTileType];
+                if (mainFieldType == adjourningTileType) {
+                    result = mainFieldTypeName;
+                } else if (mainFieldType > adjourningTileType) {
+                    result = `edge_${adjourningTileTypeName}_${mainFieldTypeName}_${direction}`;
+                } else {
+                    const inverteddirection = DirectionInversionMap[direction];
+                    result = `edge_${mainFieldTypeName}_${adjourningTileTypeName}_${inverteddirection}`;
+                }
+            }
+
+            return result;
+        }
+
+        function calculateAdjourningHash(mapData, mx, my) {
+            let result = 0;
+
+            const mainFieldType = mapData.fields[my][mx];
+
+            for (let x = 0; x < 3; x++) {
+                for (let y = 0; y < 3; y++) {
+                    let adjourningTilePosX = mx + (x-1);
+                    let adjourningTilePosY = my + (y-1);
+                    let adjourningTileType = getAdjourningTileType(mapData, adjourningTilePosX, adjourningTilePosY);
+                    if (adjourningTileType !== mainFieldType) {
+                        result += DirectionFlag[y][x];
                     }
-                })
+                }
+            }
+
+            return result;
+        }
+
+        function drawMap(mapData) {
+            for (let my = 0; my < mapData.meta.size.h; my++) {
+                for (let mx = 0; mx < mapData.meta.size.w; mx++) {
+                    const mainFieldType = mapData.fields[my][mx];
+                    let textureFieldName = FieldType[mainFieldType];
+
+                    if (mainFieldType === 0) {
+                        const hash = calculateAdjourningHash(mapData, mx, my);
+                        const direction = DirectionHashMap[hash];
+                        let adjourningTileType = getAdjourningTileTypeByDirection(mapData, mx, my, direction);
+                        textureFieldName = generateTextureName(mainFieldType, adjourningTileType, direction);
+                    }
+
+                    let tile = new PIXI.Sprite(PIXI.utils.TextureCache[textureFieldName]);
+                    tile.x = mx * 50;
+                    tile.y = my * 50;
+                    app.stage.addChild(tile);
+                }
+            }
+
+        }
+
+        function onResourcesLoaded(loader, resources) {
+            const spritesheet_texture = resources.tileset_image.texture;
+            spritesheet_texture.sourceScale = 1;
+            const spriteSheet = new PIXI.Spritesheet(spritesheet_texture, resources.tileset.data);
+            spriteSheet.parse(() =>{
+                drawMap(resources.map.data);
+
+                var bunny = PIXI.Sprite.fromImage('bunny.png');
+                bunny.anchor.set(0.5);
+                bunny.x = app.screen.width / 2;
+                bunny.y = app.screen.height / 2;
+                app.stage.addChild(bunny);
+
+                app.ticker.add(function (delta) {
+                    bunny.rotation += 0.1 * delta;
+                });
+            });
+        }
+
+        function init() {
+            app = new PIXI.Application(window.innerHeight, window.innerHeight, { backgroundColor: 0x1099bb });
+            app.renderer.view.style.position = "absolute";
+            app.renderer.view.style.display = "block";
+            app.renderer.autoResize = true;
+            app.renderer.resize(window.innerWidth, window.innerHeight)
+            window.addEventListener("resize", () => {
+                app.renderer.resize(window.innerWidth, window.innerHeight);
+            });
+            window.setTimeout(() => app.renderer.resize(window.innerWidth, window.innerHeight), 1000);
+
+            document.body.appendChild(app.view);
+
+            var loader = new PIXI.loaders.Loader();
+            loader
+                .add('tileset_image', 'towerDefense.svg')
+                .add('tileset', 'towerDefense.json')
+                .add('map', 'map.json')
+                .load(onResourcesLoaded);
+
+            const WEBSOCKET_URL = 'ws://localhost:9000/';
+            console.log('Connecting to WebSocket at', WEBSOCKET_URL);
+            const ws = new WebSocket(WEBSOCKET_URL);
+
+            ws.addEventListener('open', (e) => {
+                console.log('WebSocket Open', e);
             });
 
-        // create a new Sprite from an image path
-        var bunny = PIXI.Sprite.fromImage('bunny.png');
+            ws.addEventListener('close', (e) => {
+                console.log('WebSocket Close', e);
+            });
 
-        // center the sprite's anchor point
-        bunny.anchor.set(0.5);
+            ws.addEventListener('error', (e) => {
+                console.log('WebSocket Close', e);
+            });
 
-        // move the sprite to the center of the screen
-        bunny.x = app.screen.width / 2;
-        bunny.y = app.screen.height / 2;
+            ws.addEventListener('message', (e) => {
+                //console.log('WebSocket Message', e);
+                if (e.data instanceof Blob) {
+                    const reader = new FileReader()
+                    reader.onload = () => {
+                        const markers = JSON.parse(reader.result);
+                        for (const i in markers) {
+                            const data = markers[i];
+                            const { ids, marker, transform } = data;
 
-        app.stage.addChild(bunny);
-
-        const WEBSOCKET_URL = 'ws://localhost:9000/';
-        console.log('Connecting to WebSocket at', WEBSOCKET_URL);
-        const ws = new WebSocket(WEBSOCKET_URL);
-
-        ws.addEventListener('open', (e) => {
-            console.log('WebSocket Open', e);
-        });
-
-        ws.addEventListener('close', (e) => {
-            console.log('WebSocket Close', e);
-        });
-
-        ws.addEventListener('error', (e) => {
-            console.log('WebSocket Close', e);
-        });
-
-        ws.addEventListener('message', (e) => {
-            //console.log('WebSocket Message', e);
-            if (e.data instanceof Blob) {
-                const reader = new FileReader()
-                reader.onload = () => {
-                    const markers = JSON.parse(reader.result);
-                    for (const i in markers) {
-                        const data = markers[i];
-                        const { ids, marker, transform } = data;
-
-                        if (ids[0] == 1) {
-                            bunny.x = marker[0][0][0];
-                            bunny.y = marker[0][0][1];
+                            if (ids[0] == 1) {
+                                bunny.x = marker[0][0][0];
+                                bunny.y = marker[0][0][1];
+                            }
                         }
-                    }
-                };
-                reader.readAsText(e.data);
-            }
-        });
+                    };
+                    reader.readAsText(e.data);
+                }
+            });
+        }
 
-        // Listen for animate update
-        app.ticker.add(function (delta) {
-            // just for fun, let's rotate mr rabbit a little
-            // delta is 1 if running at 100% performance
-            // creates frame-independent transformation
-            bunny.rotation += 0.1 * delta;
-        });
+        init();
     </script>
 </body>
 </html>
