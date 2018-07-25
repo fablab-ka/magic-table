@@ -42,7 +42,7 @@
              'nw': [1, 130, 131, 135, 134, 67, 66],
               'n': [2, 5, 3, 6, 7],
              'ne': [4, 10, 14, 15, 19],
-              'w': [128, 129, 65, 172, 173],
+              'w': [128, 129, 65, 172, 173, 192],
               'e': [8, 12, 24, 28, 20],
              'sw': [64, 160, 224, 33],
               's': [32, 96, 48, 80, 112],
@@ -86,8 +86,8 @@
         }
 
         function getAdjourningTileTypeByDirection(mapData, mx, my, direction) {
-            const posX = DirectionOffsetMap[direction][0];
-            const posY = DirectionOffsetMap[direction][1];
+            const posX = mx + DirectionOffsetMap[direction][0];
+            const posY = my + DirectionOffsetMap[direction][1];
             return getAdjourningTileType(mapData, posX, posY)
         }
 
