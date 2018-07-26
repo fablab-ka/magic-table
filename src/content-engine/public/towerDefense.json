@@ -4,37 +4,49 @@
     },
     "frames": {
         "dirt": {
-            "frame": { "x": 0, "y": 0, "w": 48, "h": 48 }
+            "frame": { "x": 256, "y": 128, "w": 64, "h": 64 }
         },
         "grass": {
-            "frame": { "x": 72, "y": 72, "w": 48, "h": 48 }
+            "frame": { "x": 1216, "y": 384, "w": 64, "h": 64 }
         },
         "edge_dirt_grass_nw": {
-            "frame": { "x": 24, "y": 24, "w": 48, "h": 48 }
+            "frame": { "x": 0, "y": 0, "w": 64, "h": 64 }
         },
         "edge_dirt_grass_ne": {
-            "frame": { "x": 120, "y": 24, "w": 48, "h": 48 }
+            "frame": { "x": 128, "y": 0, "w": 64, "h": 64 }
         },
         "edge_dirt_grass_sw": {
-            "frame": { "x": 24, "y": 120, "w": 48, "h": 48 }
+            "frame": { "x": 0, "y": 128, "w": 64, "h": 64 }
         },
         "edge_dirt_grass_se": {
-            "frame": { "x": 120, "y": 120, "w": 48, "h": 48 }
+            "frame": { "x": 128, "y": 128, "w": 64, "h": 64 }
+        },
+        "edge_dirt_grass_nwi": {
+            "frame": { "x": 256, "y": 64, "w": 64, "h": 64 }
+        },
+        "edge_dirt_grass_nei": {
+            "frame": { "x": 192, "y": 64, "w": 64, "h": 64 }
+        },
+        "edge_dirt_grass_swi": {
+            "frame": { "x": 256, "y": 0, "w": 64, "h": 64 }
+        },
+        "edge_dirt_grass_sei": {
+            "frame": { "x": 192, "y": 0, "w": 64, "h": 64 }
         },
         "edge_dirt_grass_n": {
-            "frame": { "x": 72, "y": 24, "w": 48, "h": 48 }
+            "frame": { "x": 64, "y": 0, "w": 64, "h": 64 }
         },
         "edge_dirt_grass_w": {
-            "frame": { "x": 24, "y": 72, "w": 48, "h": 48 }
+            "frame": { "x": 0, "y": 64, "w": 64, "h": 64 }
         },
         "edge_dirt_grass_e": {
-            "frame": { "x": 120, "y": 72, "w": 48, "h": 48 }
+            "frame": { "x": 128, "y": 64, "w": 64, "h": 64 }
         },
         "edge_dirt_grass_s": {
-            "frame": { "x": 72, "y": 120, "w": 48, "h": 48 }
+            "frame": { "x": 64, "y": 128, "w": 64, "h": 64 }
         },
         "sand": {
-            "frame": { "x": 0, "y": 384, "w": 48, "h": 48 }
+            "frame": { "x": 0, "y": 384, "w": 64, "h": 64 }
         }
     }
 }
