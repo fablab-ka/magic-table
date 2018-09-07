@@ -10,6 +10,12 @@ from SimpleWebSocketServer import SimpleWebSocketServer, WebSocket
 clients = []
 server = None
 serverRunning = False
+[width, height] = (800, 800)
+marker_length_in_meter = 1
+calibration = np.load('./calibration.npz')
+dist_coeffs = calibration['dist_coeffs']
+camera_matrix = calibration['camera_matrix']
+projector_to_camera_offset = np.array([0, 0, 0])
 
 def send_transforms(clients, transforms):
     message = json.dumps(transforms)
@@ -19,9 +25,8 @@ def send_transforms(clients, transforms):
 def start_camera_analysis():
     print("Starting Camera Analysis")
 
-    cap = cv2.VideoCapture(0)
+    cap = cv2.VideoCapture(2)
     dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_6X6_250)
-    [width, height] = (800, 600)
 
     while serverRunning:
         ret, frame = cap.read()
@@ -31,23 +36,43 @@ def start_camera_analysis():
         if len(markers) > 0:
             cv2.aruco.drawDetectedMarkers(frame, markers, ids)
 
-            transforms = []
+            rvecs, tvecs, points = cv2.aruco.estimatePoseSingleMarkers(
+                markers,
+                marker_length_in_meter,
+                camera_matrix,
+                dist_coeffs
+            )
+            # todo matrix multiplication with calibration matrix
+            tvecs += projector_to_camera_offset
+            #print(rvecs, tvecs, points)
+            #print(imgpts)
 
+            transforms = []
             for i in range(len(markers)):
-                marker = markers[i]
-                markerIds = ids[i]
+                imgpts, jac = cv2.projectPoints(
+                    points, rvecs[i], tvecs[i], camera_matrix, dist_coeffs
+                )
+                #print('markers', markers)
+                #print('imgpts', imgpts)
                 transform = cv2.getPerspectiveTransform(
                     np.array(
-                        [[0, 0], [width, 0], [width, height], [0, height]],
+                        [
+                            [0, 0],
+                            [width, 0],
+                            [width, height],
+                            [0, height]
+                        ] * len(markers),
                         np.float32
                     ),
-                    marker
-                 )
+                    imgpts
+                )
+                #print(transform)
+                marker_ids = ids[i]
 
                 transforms.append({
-                    'marker': marker.tolist(),
+                    'marker': imgpts.tolist(),
                     'transform': transform.tolist(),
-                    'ids': markerIds.tolist()
+                    'ids': marker_ids.tolist()
                 })
 
             try:
