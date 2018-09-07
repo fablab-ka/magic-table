@@ -10,7 +10,6 @@ from SimpleWebSocketServer import SimpleWebSocketServer, WebSocket
 clients = []
 server = None
 serverRunning = False
-[width, height] = (800, 800)
 marker_length_in_meter = 1
 calibration = np.load('./calibration.npz')
 dist_coeffs = calibration['dist_coeffs']
@@ -26,10 +25,13 @@ def start_camera_analysis():
     print("Starting Camera Analysis")
 
     cap = cv2.VideoCapture(2)
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 800)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 600)
     dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_6X6_250)
 
     while serverRunning:
         ret, frame = cap.read()
+        print(frame.shape)
 
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         (markers, ids, n) = cv2.aruco.detectMarkers(gray, dictionary)
@@ -44,35 +46,16 @@ def start_camera_analysis():
             )
             # todo matrix multiplication with calibration matrix
             tvecs += projector_to_camera_offset
-            #print(rvecs, tvecs, points)
-            #print(imgpts)
 
             transforms = []
             for i in range(len(markers)):
                 imgpts, jac = cv2.projectPoints(
                     points, rvecs[i], tvecs[i], camera_matrix, dist_coeffs
                 )
-                #print('markers', markers)
-                #print('imgpts', imgpts)
-                transform = cv2.getPerspectiveTransform(
-                    np.array(
-                        [
-                            [0, 0],
-                            [width, 0],
-                            [width, height],
-                            [0, height]
-                        ] * len(markers),
-                        np.float32
-                    ),
-                    imgpts
-                )
-                #print(transform)
-                marker_ids = ids[i]
 
                 transforms.append({
                     'marker': imgpts.tolist(),
-                    'transform': transform.tolist(),
-                    'ids': marker_ids.tolist()
+                    'ids': ids[i].tolist()
                 })
 
             try:

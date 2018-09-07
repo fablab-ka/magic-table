@@ -202,8 +202,6 @@ function onResourcesLoaded(loader, resources) {
 
         bunny = new PIXI.projection.Sprite2d(new PIXI.Texture.fromImage('bunny.png'));
         bunny.anchor.set(0.5);
-        //bunny.x = app.screen.width / 2;
-        //bunny.y = app.screen.height / 2;
         app.stage.addChild(bunny);
 
         rectangle = new PIXI.Graphics();
@@ -235,11 +233,11 @@ function init() {
     app.renderer.view.style.position = "absolute";
     app.renderer.view.style.display = "block";
     app.renderer.autoResize = true;
-    app.renderer.resize(window.innerWidth, window.innerHeight)
-    window.addEventListener("resize", () => {
+    app.renderer.resize(800, 600)
+    /*window.addEventListener("resize", () => {
         app.renderer.resize(window.innerWidth, window.innerHeight);
     });
-    window.setTimeout(() => app.renderer.resize(window.innerWidth, window.innerHeight), 1000);
+    window.setTimeout(() => app.renderer.resize(window.innerWidth, window.innerHeight), 1000);*/
 
     document.body.appendChild(app.view);
 
@@ -274,18 +272,7 @@ function init() {
                 const markers = JSON.parse(reader.result);
                 for (const i in markers) {
                     const data = markers[i];
-                    const { ids, marker, transform } = data;
-
-                    let transformMatrix = new PIXI.Matrix(
-                        transform[0][0],
-                        transform[0][1],
-                        transform[1][0],
-                        transform[1][1],
-                        transform[0][2],
-                        transform[1][2],
-                    )
-                    transformMatrix.fromArray([...transform[0], ...transform[1], ...transform[2]])
-                    console.log(marker, transform);
+                    const { ids, marker } = data;
 
                     for (let i = 0; i < 4; i++) {
                         points[i].x = marker[i][0][0];
@@ -293,18 +280,12 @@ function init() {
                     }
 
                     if (ids[0] == 0) {
-                        /*rectangle.x = marker[0][0];
-                        rectangle.y = marker[0][1];
-                        rectangle.width = marker[2][0] - marker[0][0];
-                        rectangle.height = marker[2][1] - marker[0][1];*/
                         bunny.proj.mapSprite(bunny, [
                             new PIXI.Point(marker[0][0][0], marker[0][0][1]),
                             new PIXI.Point(marker[1][0][0], marker[1][0][1]),
                             new PIXI.Point(marker[2][0][0], marker[2][0][1]),
                             new PIXI.Point(marker[3][0][0], marker[3][0][1]),
                         ]);
-                    } else if (ids[0] == 1) {
-                        rectangle.transform.setFromMatrix(transformMatrix);
                     }
                 }
             };
