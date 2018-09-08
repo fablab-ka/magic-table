@@ -1,8 +1,25 @@
 
 let app;
 let bunny;
+let map;
+let statements = {
+    51: {
+        command: 'forward',
+        file: 'tiles/scratch_tile_statement_forward.svg'
+    },
+    52: {
+        command: 'left',
+        file: 'tiles/scratch_tile_statement_left.svg'
+    },
+    53: {
+        command: 'right',
+        file: 'tiles/scratch_tile_statement_right.svg'
+    },
+};
 let rectangle;
 let points = [];
+
+const backgroundColor = 0x333333;
 
 const tileSize = 64;
 const FieldType = {
@@ -169,6 +186,7 @@ function calculateAdjourningHash(mapData, mx, my) {
 }
 
 function drawMap(mapData) {
+    map = new PIXI.Sprite();
     for (let my = 0; my < mapData.meta.size.h; my++) {
         for (let mx = 0; mx < mapData.meta.size.w; mx++) {
             const mainFieldType = mapData.fields[my][mx];
@@ -187,10 +205,10 @@ function drawMap(mapData) {
             let tile = new PIXI.Sprite(PIXI.utils.TextureCache[textureFieldName]);
             tile.x = mx * tileSize;
             tile.y = my * tileSize;
-            app.stage.addChild(tile);
+            map.addChild(tile);
         }
     }
-
+    app.stage.addChild(map);
 }
 
 function onResourcesLoaded(loader, resources) {
@@ -199,6 +217,19 @@ function onResourcesLoaded(loader, resources) {
     const spriteSheet = new PIXI.Spritesheet(spritesheet_texture, resources.tileset.data);
     spriteSheet.parse(() => {
         drawMap(resources.map.data);
+
+        Object.values(statements).forEach((statement) => {
+            statement.sprite = new PIXI.projection.Sprite2d();
+            statement.sprite.anchor.set(0.5);
+            const tileSprite = new PIXI.projection.Sprite2d(new PIXI.Texture.fromImage(statement.file));
+            tileSprite.anchor.set(0, 0.5);
+            tileSprite.position.x = -1;
+            tileSprite.scale.x = 0.025;
+            tileSprite.scale.y = 0.025;
+            //tileSprite.position.x = -10;
+            statement.sprite.addChild(tileSprite);
+            app.stage.addChild(statement.sprite);
+        });
 
         bunny = new PIXI.projection.Sprite2d(new PIXI.Texture.fromImage('bunny.png'));
         bunny.anchor.set(0.5);
@@ -229,11 +260,11 @@ function onResourcesLoaded(loader, resources) {
 }
 
 function init() {
-    app = new PIXI.Application(window.innerHeight, window.innerHeight, { backgroundColor: 0x1099bb });
+    app = new PIXI.Application(window.innerHeight, window.innerHeight, { backgroundColor });
     app.renderer.view.style.position = "absolute";
     app.renderer.view.style.display = "block";
     app.renderer.autoResize = true;
-    app.renderer.resize(800, 600)
+    app.renderer.resize(1920, 1080)
     /*window.addEventListener("resize", () => {
         app.renderer.resize(window.innerWidth, window.innerHeight);
     });
@@ -270,22 +301,35 @@ function init() {
             const reader = new FileReader()
             reader.onload = () => {
                 const markers = JSON.parse(reader.result);
+                app.stage.removeChildren();
                 for (const i in markers) {
                     const data = markers[i];
                     const { ids, marker } = data;
 
-                    for (let i = 0; i < 4; i++) {
-                        points[i].x = marker[i][0][0];
-                        points[i].y = marker[i][0][1];
-                    }
-
-                    if (ids[0] == 0) {
+                    if (statements[ids[0]]) {
+                        const sprite = statements[ids[0]].sprite;
+                        app.stage.addChild(sprite);
+                        sprite.proj.mapSprite(sprite, [
+                            new PIXI.Point(marker[0][0][0], marker[0][0][1]),
+                            new PIXI.Point(marker[1][0][0], marker[1][0][1]),
+                            new PIXI.Point(marker[2][0][0], marker[2][0][1]),
+                            new PIXI.Point(marker[3][0][0], marker[3][0][1]),
+                        ]);
+                    } else if (ids[0] == 0) {
+                        app.stage.addChild(map);
+                        app.stage.addChild(bunny);
                         bunny.proj.mapSprite(bunny, [
                             new PIXI.Point(marker[0][0][0], marker[0][0][1]),
                             new PIXI.Point(marker[1][0][0], marker[1][0][1]),
                             new PIXI.Point(marker[2][0][0], marker[2][0][1]),
                             new PIXI.Point(marker[3][0][0], marker[3][0][1]),
                         ]);
+
+                        for (let i = 0; i < 4; i++) {
+                            points[i].x = marker[i][0][0];
+                            points[i].y = marker[i][0][1];
+                            app.stage.addChild(points[i]);
+                        }
                     }
                 }
             };

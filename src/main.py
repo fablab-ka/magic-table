@@ -11,7 +11,7 @@ clients = []
 server = None
 serverRunning = False
 marker_length_in_meter = 1
-calibration = np.load('./calibration.npz')
+calibration = np.load('./calibration_1080.npz')
 dist_coeffs = calibration['dist_coeffs']
 camera_matrix = calibration['camera_matrix']
 projector_to_camera_offset = np.array([0, 0, 0])
@@ -25,13 +25,12 @@ def start_camera_analysis():
     print("Starting Camera Analysis")
 
     cap = cv2.VideoCapture(2)
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 800)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 600)
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
     dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_6X6_250)
 
     while serverRunning:
         ret, frame = cap.read()
-        print(frame.shape)
 
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         (markers, ids, n) = cv2.aruco.detectMarkers(gray, dictionary)
