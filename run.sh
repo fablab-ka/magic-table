@@ -1,6 +1,8 @@
-cd src
+cd cv-server
 python main.py &
-cd content-engine
+
+cd ../content-engine
+npx tsc --watch &
 node index.js
 
 #kill background job on term

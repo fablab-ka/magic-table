@@ -4,11 +4,17 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "build": "tsc"
   },
   "dependencies": {
+    "@types/pixi.js": "^4.8.1",
     "express": "^4.16.3",
+    "pixi.js": "^4.8.2",
     "puppeteer": "^1.5.0",
+    "tslint": "^5.11.0",
+    "typescript": "^3.0.3",
+    "webpack": "^4.19.1",
     "ws": "^5.2.2"
   }
 }

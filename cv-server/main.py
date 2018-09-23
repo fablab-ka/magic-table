@@ -52,9 +52,25 @@ def start_camera_analysis():
                     points, rvecs[i], tvecs[i], camera_matrix, dist_coeffs
                 )
 
+                print(points)
+                transform = cv2.getPerspectiveTransform(
+                    np.array(
+                        [
+                            [-0.5, 0.5],
+                            [0.5, 0.5],
+                            [0.5, -0.5],
+                            [-0.5, -0.5]
+                        ] * len(markers),
+                        np.float32
+                    ),
+                    imgpts
+                )
+                print(ids)
+
                 transforms.append({
                     'marker': imgpts.tolist(),
-                    'ids': ids[i].tolist()
+                    'ids': ids[i].tolist(),
+                    'transform': transform.tolist()
                 })
 
             try:
