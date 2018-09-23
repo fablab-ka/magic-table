@@ -6,8 +6,8 @@ import {
     DirectionInversionMap,
     DirectionOffsetMap,
     tileSize,
-} from './constants.js';
-import './pixi-projection.js';
+} from './constants';
+// import './pixi-projection.js';
 import { Command, Direction, MapData, Statement, StatementList, TileType } from './types';
 
 let app: PIXI.Application;
@@ -274,7 +274,7 @@ function init() {
                         transform[0][2],
                         transform[1][2],
                     );
-                    transformMatrix.fromArray([...transform[0], ...transform[1], ...transform[2]])
+                    transformMatrix.fromArray([...transform[0], ...transform[1], ...transform[2]]);
 
                     if (statements[ids[0]]) {
                         const sprite = statements[ids[0]].sprite;

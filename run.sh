@@ -2,7 +2,7 @@ cd cv-server
 python main.py &
 
 cd ../content-engine
-npx tsc --watch &
+npx webpack --watch &
 node index.js
 
 #kill background job on term
