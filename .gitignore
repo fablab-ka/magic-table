@@ -1,3 +1,4 @@
 markers/
 .vscode/
 content-engine/node_modules/
+content-engine/public/js/
