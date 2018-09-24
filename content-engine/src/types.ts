@@ -7,7 +7,7 @@ export enum Command {
 export interface Statement {
     command: Command;
     file: string;
-    sprite?: PIXI.Sprite;
+    sprite: PIXI.Sprite;
 }
 
 export interface StatementList {

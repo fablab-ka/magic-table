@@ -15,6 +15,7 @@ calibration = np.load('./calibration_1080.npz')
 dist_coeffs = calibration['dist_coeffs']
 camera_matrix = calibration['camera_matrix']
 projector_to_camera_offset = np.array([0, 0, 0])
+camera_index = 0
 
 def send_transforms(clients, transforms):
     message = json.dumps(transforms)
@@ -24,7 +25,7 @@ def send_transforms(clients, transforms):
 def start_camera_analysis():
     print("Starting Camera Analysis")
 
-    cap = cv2.VideoCapture(2)
+    cap = cv2.VideoCapture(camera_index)
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
     dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_6X6_250)
@@ -53,14 +54,15 @@ def start_camera_analysis():
                 )
 
                 print(points)
+                width, height = 800, 800
                 transform = cv2.getPerspectiveTransform(
                     np.array(
                         [
-                            [-0.5, 0.5],
-                            [0.5, 0.5],
-                            [0.5, -0.5],
-                            [-0.5, -0.5]
-                        ] * len(markers),
+                            [0, 0],
+                            [width, 0],
+                            [width, height],
+                            [0, height]
+                        ],
                         np.float32
                     ),
                     imgpts

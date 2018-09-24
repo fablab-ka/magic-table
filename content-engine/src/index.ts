@@ -13,18 +13,22 @@ import { Command, Direction, MapData, Statement, StatementList, TileType } from 
 let app: PIXI.Application;
 let bunny: PIXI.Sprite;
 let map: PIXI.Sprite;
+let ready = false;
 const statements: StatementList = {
-    1: {
+    51: {
         command: Command.Forward,
         file: 'tiles/scratch_tile_statement_forward.svg',
+        sprite: new PIXI.Sprite(),
     },
     52: {
         command: Command.Left,
         file: 'tiles/scratch_tile_statement_left.svg',
+        sprite: new PIXI.Sprite(),
     },
     53: {
         command: Command.Right,
         file: 'tiles/scratch_tile_statement_right.svg',
+        sprite: new PIXI.Sprite(),
     },
 };
 let rectangle;
@@ -175,20 +179,22 @@ function onResourcesLoaded(loader: PIXI.loaders.Loader, resources: PIXI.loaders.
     spriteSheet.parse(() => {
         drawMap(resources.map.data);
 
-        Object.values(statements).forEach((statement: Statement) => {
-            statement.sprite = new PIXI.Sprite();
-            statement.sprite.anchor.set(0.5);
-            const tileSprite = new PIXI.Sprite(PIXI.Texture.fromImage(statement.file));
-            tileSprite.anchor.set(0, 0.5);
-            tileSprite.position.x = -1;
-            tileSprite.scale.x = 0.025;
-            tileSprite.scale.y = 0.025;
-            // tileSprite.position.x = -10;
-            statement.sprite.addChild(tileSprite);
-            app.stage.addChild(statement.sprite);
-        });
+        for (const id in statements) {
+            if (statements.hasOwnProperty(id)) {
+                statements[id].sprite.anchor.set(0.5);
 
-        bunny = new PIXI.Sprite(PIXI.Texture.fromImage('bunny.png'));
+                const tileSprite = new PIXI.Sprite(resources[`statement_${id}`].texture);
+                tileSprite.anchor.set(0, 0.5);
+                tileSprite.position.x = -1;
+                tileSprite.scale.x = 0.025;
+                tileSprite.scale.y = 0.025;
+                // tileSprite.position.x = -10;
+                statements[id].sprite.addChild(tileSprite);
+                app.stage.addChild(statements[id].sprite);
+            }
+        }
+
+        bunny = new PIXI.Sprite(resources.bunny.texture);
         bunny.anchor.set(0.5);
         app.stage.addChild(bunny);
 
@@ -213,6 +219,8 @@ function onResourcesLoaded(loader: PIXI.loaders.Loader, resources: PIXI.loaders.
         app.ticker.add((delta) => {
             // bunny.rotation += 0.1 * delta;
         });
+
+        ready = true;
     });
 }
 
@@ -230,7 +238,13 @@ function init() {
     document.body.appendChild(app.view);
 
     const loader = new PIXI.loaders.Loader();
+    for (const id in statements) {
+        if (statements.hasOwnProperty(id)) {
+            loader.add(`statement_${id}`, statements[id].file);
+        }
+    }
     loader
+        .add('bunny', 'bunny.png')
         .add('tileset_image', 'towerDefense.svg')
         .add('tileset', 'towerDefense.json')
         .add('map', 'map.json')
@@ -253,6 +267,8 @@ function init() {
     });
 
     ws.addEventListener('message', (e) => {
+        if (!ready) { return; }
+
         // console.log('WebSocket Message', e);
         if (e.data instanceof Blob) {
             const reader = new FileReader();
@@ -280,7 +296,7 @@ function init() {
                         const sprite = statements[ids[0]].sprite;
                         if (sprite) {
                             app.stage.addChild(sprite);
-                            (sprite.transform as PIXI.TransformStatic).setFromMatrix(transformMatrix);
+                            // (sprite.transform as PIXI.TransformStatic).setFromMatrix(transformMatrix);
                         } else {
                             console.error('sprite not defined', ids[0]);
                         }
@@ -294,7 +310,9 @@ function init() {
                     } else if (ids[0] === 0) {
                         app.stage.addChild(map);
                         app.stage.addChild(bunny);
-                        (bunny.transform as PIXI.TransformStatic).setFromMatrix(transformMatrix);
+                        // (bunny.transform as PIXI.TransformStatic).setFromMatrix(transformMatrix);
+                        bunny.position.x = transform[0][2];
+                        bunny.position.y = transform[1][2];
                         /* bunny.proj.mapSprite(bunny, [
                                 new PIXI.Point(marker[0][0][0], marker[0][0][1]),
                                 new PIXI.Point(marker[1][0][0], marker[1][0][1]),
