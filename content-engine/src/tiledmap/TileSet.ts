@@ -19,7 +19,7 @@ export default class TileSet {
         this.margin = 0;
 
         this.baseTexture = PIXI.Texture.fromImage(
-            tileSet.image.source,
+            'assets/' + tileSet.image.source,
             false,
             PIXI.SCALE_MODES.NEAREST,
         ) as any as PIXI.BaseTexture;

@@ -5,6 +5,8 @@ export default class Tile extends PIXI.extras.AnimatedSprite {
     public verticalFlip: boolean;
     public diagonalFlip: boolean;
     public animations: any[];
+    public x: number;
+    public y: number;
 
     constructor(tile: any, tileSet: any, horizontalFlip: boolean, verticalFlip: boolean, diagonalFlip: boolean) {
         const textures: any[] = [];
@@ -27,6 +29,8 @@ export default class Tile extends PIXI.extras.AnimatedSprite {
         this.horizontalFlip = horizontalFlip;
         this.verticalFlip = verticalFlip;
         this.diagonalFlip = diagonalFlip;
+        this.x = tile.x;
+        this.y = tile.y;
 
         Object.assign(this, tile);
 

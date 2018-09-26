@@ -2,21 +2,17 @@ import * as PIXI from 'pixi.js';
 
 import TiledMap from './tiledmap/TiledMap';
 import tiledMapLoader from './tiledmap/tiledMapLoader';
+import TileLayer from './tiledmap/TileLayer';
 
 import {
     backgroundColor,
-    DirectionFlag,
-    DirectionHashes,
-    DirectionInversionMap,
-    DirectionOffsetMap,
-    tileSize,
 } from './constants';
 // import './pixi-projection.js';
-import { Command, Direction, MapData, Statement, StatementList, TileType } from './types';
+import { Command, StatementList } from './types';
 
 let app: PIXI.Application;
 let bunny: PIXI.Sprite;
-let map: PIXI.Sprite;
+let map: TiledMap;
 let ready = false;
 const statements: StatementList = {
     51: {
@@ -37,148 +33,10 @@ const statements: StatementList = {
 };
 let rectangle;
 const points: PIXI.Graphics[] = [];
-const DirectionHashMap: { [hash: number]: Direction } = {};
-for (const direction of Object.keys(DirectionHashes)) {
-    for (const hash of DirectionHashes[direction]) {
-        DirectionHashMap[hash] = direction as Direction;
-    }
-}
-
-function getAdjourningTileType(mapData: MapData, posX: number, posY: number): TileType {
-    let result: TileType = TileType.Dirt;
-
-    if (posX >= 0 && posX < mapData.meta.size.w) {
-        if (posY >= 0 && posY < mapData.meta.size.h) {
-            result = mapData.fields[posY][posX];
-        }
-    }
-
-    return result;
-}
-
-function findMaxType(types: TileType[], except: TileType[] = []): TileType | undefined {
-    let result = types.find((type) => !except.includes(type));
-    if (!result) {
-        return undefined;
-    }
-
-    const counts: { [type in TileType]: number } = {
-        [TileType.Dirt]: 0,
-        [TileType.Grass]: 0,
-    };
-    types.forEach((type) => counts[type] = types.filter((t) => t === type).length);
-    let currentCount = counts[result];
-    types.forEach((type) => {
-        if (counts[type] > currentCount && !except.includes(type)) {
-            currentCount = counts[type];
-            result = type;
-        }
-    });
-
-    return result || types[0];
-}
-
-function getAllAdjourningTiles(mapData: MapData, mx: number, my: number): TileType[] {
-    const result = [];
-
-    for (let y = 0; y < 3; y++) {
-        for (let x = 0; x < 3; x++) {
-            if (x === 1 && y === 1) { continue; }
-
-            result.push(getAdjourningTileType(mapData, mx + (x - 1), my + (y - 1)));
-        }
-    }
-
-    return result;
-}
-
-function getAdjourningTileTypeByDirection(mapData: MapData, mx: number, my: number, direction: Direction) {
-    if (direction === 'f') {
-        const tileTypes = getAllAdjourningTiles(mapData, mx, my);
-        return findMaxType(tileTypes);
-    }
-
-    const types = [];
-    for (const pos of Object.values(DirectionOffsetMap[direction])) {
-        const type = getAdjourningTileType(mapData, pos[0], pos[1]);
-        types.push(type);
-    }
-
-    return findMaxType(types, [mapData.fields[my][mx]]);
-}
-
-function generateTextureName(mainFieldType: TileType, adjourningTileType: TileType | undefined, direction: Direction) {
-    const mainTileTypeName = TileType[mainFieldType];
-    let result = mainTileTypeName;
-    if (direction !== 'c') {
-        if (!adjourningTileType) {
-            result = mainTileTypeName;
-        } else {
-            const adjourningTileTypeName = TileType[adjourningTileType];
-            if (direction === 'f') {
-                result = adjourningTileTypeName;
-            } else if (mainFieldType === adjourningTileType) {
-                result = mainTileTypeName;
-            } else if (mainFieldType > adjourningTileType) {
-                result = `edge_${adjourningTileTypeName}_${mainTileTypeName}_${direction}`;
-            } else {
-                const inverteddirection = DirectionInversionMap[direction];
-                result = `edge_${mainTileTypeName}_${adjourningTileTypeName}_${inverteddirection}`;
-            }
-        }
-    }
-
-    return result;
-}
-
-function calculateAdjourningHash(mapData: MapData, mx: number, my: number): number {
-    let result = 0;
-
-    const mainFieldType = mapData.fields[my][mx];
-
-    for (let x = 0; x < 3; x++) {
-        for (let y = 0; y < 3; y++) {
-            const adjourningTilePosX = mx + (x - 1);
-            const adjourningTilePosY = my + (y - 1);
-            const adjourningTileType = getAdjourningTileType(mapData, adjourningTilePosX, adjourningTilePosY);
-            if (adjourningTileType !== mainFieldType) {
-                result += DirectionFlag[y][x];
-            }
-        }
-    }
-
-    return result;
-}
-
-function drawMap(mapData: MapData) {
-    map = new PIXI.Sprite();
-    for (let my = 0; my < mapData.meta.size.h; my++) {
-        for (let mx = 0; mx < mapData.meta.size.w; mx++) {
-            const mainFieldType = mapData.fields[my][mx];
-            let textureFieldName = TileType[mainFieldType];
-
-            if (mainFieldType === 0) {
-                const hash = calculateAdjourningHash(mapData, mx, my);
-                const direction = DirectionHashMap[hash];
-                if (typeof direction === 'undefined') {
-                    console.error('hash not yet defined: ' + hash);
-                }
-                const adjourningTileType = getAdjourningTileTypeByDirection(mapData, mx, my, direction);
-                textureFieldName = generateTextureName(mainFieldType, adjourningTileType, direction);
-            }
-
-            const tile = new PIXI.Sprite(PIXI.utils.TextureCache[textureFieldName]);
-            tile.x = mx * tileSize;
-            tile.y = my * tileSize;
-            map.addChild(tile);
-        }
-    }
-    app.stage.addChild(map);
-}
 
 function onResourcesLoaded(loader: PIXI.loaders.Loader, resources: PIXI.loaders.ResourceDictionary) {
-    const tileMap = new TiledMap(resources.map);
-    app.stage.addChild(tileMap);
+    map = new TiledMap(resources.map);
+    app.stage.addChild(map);
 
     const spritesheetTexture = resources.tileset_image.texture;
     // spritesheetTexture.sourceScale = 1;
@@ -223,8 +81,19 @@ function onResourcesLoaded(loader: PIXI.loaders.Loader, resources: PIXI.loaders.
             app.stage.addChild(points[i]);
         }
 
+        let currentWiggle = 0;
+        let step = 1;
         app.ticker.add((delta) => {
             // bunny.rotation += 0.1 * delta;
+            (map.layers[2] as TileLayer).tiles.forEach((tile) => {
+                tile.y += currentWiggle*0.1;
+            });
+            currentWiggle += step;
+            if (currentWiggle >= 10 && step > 0) {
+                step = -1;
+            } else if (currentWiggle <= -10 && step < 0) {
+                step = 1;
+            }
         });
 
         ready = true;

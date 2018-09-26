@@ -1,29 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <map version="1.0" tiledversion="1.1.2" orientation="orthogonal" renderorder="right-down" width="15" height="9" tilewidth="128" tileheight="128" infinite="0" nextobjectid="1">
  <tileset firstgid="1" name="TowerDefense" tilewidth="128" tileheight="128" tilecount="299" columns="23">
-  <image source="assets/Tilesheet/towerDefense_tilesheet@2.png" width="2944" height="1664"/>
-  <wangsets>
-   <wangset name="New Wang Set" tile="-1">
-    <wangtile tileid="82" wangid="0x10102010"/>
-    <wangtile tileid="83" wangid="0x10201010"/>
-    <wangtile tileid="105" wangid="0x10101020"/>
-    <wangtile tileid="106" wangid="0x20101010"/>
-    <wangtile tileid="207" wangid="0x10102010"/>
-    <wangtile tileid="208" wangid="0x10202010"/>
-    <wangtile tileid="209" wangid="0x10201010"/>
-    <wangtile tileid="210" wangid="0x20201020"/>
-    <wangtile tileid="211" wangid="0x20102020"/>
-    <wangtile tileid="230" wangid="0x10102020"/>
-    <wangtile tileid="231" wangid="0x20202020"/>
-    <wangtile tileid="232" wangid="0x20201010"/>
-    <wangtile tileid="233" wangid="0x20202010"/>
-    <wangtile tileid="234" wangid="0x10202020"/>
-    <wangtile tileid="253" wangid="0x10101020"/>
-    <wangtile tileid="254" wangid="0x20101020"/>
-    <wangtile tileid="255" wangid="0x20101010"/>
-    <wangtile tileid="257" wangid="0x10101010"/>
-   </wangset>
-  </wangsets>
+  <image source="Tilesheet/towerDefense_tilesheet@2.png" width="2944" height="1664"/>
  </tileset>
  <layer name="ground" width="15" height="9">
   <data encoding="csv">
@@ -54,13 +32,26 @@
  <layer name="active elements" width="15" height="9">
   <data encoding="csv">
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,2684354765,0,0,0,181,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,273,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,273,0,0,0,0,
 0,0,273,0,0,0,0,0,0,0,273,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,273,0,0,0,0,
-0,0,0,0,0,0,273,0,0,0,273,0,0,23,0,
+0,0,0,0,0,0,273,0,0,0,273,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+</data>
+ </layer>
+ <layer name="static elements" width="15" height="9">
+  <data encoding="csv">
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,2684354765,0,0,0,181,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,23,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 </data>
  </layer>

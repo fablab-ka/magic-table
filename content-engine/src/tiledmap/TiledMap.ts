@@ -2,10 +2,12 @@ import ImageLayer from './ImageLayer';
 import TileLayer from './TileLayer';
 import TileSet from './TileSet';
 
+type Layer = TileLayer | ImageLayer;
+
 export default class TiledMap extends PIXI.Container {
     public resource: PIXI.loaders.Resource;
-    public tileSets: any[];
-    public layers: any[];
+    public tileSets: TileSet[];
+    public layers: Layer[];
     public background: PIXI.Graphics;
     public tileWidth: number;
     public tileHeight: number;
