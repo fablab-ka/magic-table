@@ -86,7 +86,7 @@ function onResourcesLoaded(loader: PIXI.loaders.Loader, resources: PIXI.loaders.
         app.ticker.add((delta) => {
             // bunny.rotation += 0.1 * delta;
             (map.layers[2] as TileLayer).tiles.forEach((tile) => {
-                tile.y += currentWiggle*0.1;
+                tile.y += currentWiggle * 0.1;
             });
             currentWiggle += step;
             if (currentWiggle >= 10 && step > 0) {
