@@ -2071,6 +2071,12 @@ pixi-gl-core@^1.1.4:
   version "1.1.4"
   resolved "https://registry.yarnpkg.com/pixi-gl-core/-/pixi-gl-core-1.1.4.tgz#8b4b5c433b31e419bc379dc565ce1b835a91b372"
 
+pixi-tiledmap@^1.9.3:
+  version "1.9.3"
+  resolved "https://registry.yarnpkg.com/pixi-tiledmap/-/pixi-tiledmap-1.9.3.tgz#549759edb243a694efb16a801dda8abe17f8c110"
+  dependencies:
+    tmx-parser "^1.5.0"
+
 pixi.js@^4.8.2:
   version "4.8.2"
   resolved "https://registry.yarnpkg.com/pixi.js/-/pixi.js-4.8.2.tgz#c9e6f5f3b6780d2236705a7539e4e5ca3d74151f"
@@ -2354,6 +2360,10 @@ safe-regex@^1.1.0:
 sax@^1.2.4:
   version "1.2.4"
   resolved "https://registry.yarnpkg.com/sax/-/sax-1.2.4.tgz#2816234e2378bddc4e5354fab5caa895df7100d9"
+
+sax@~1.1.2:
+  version "1.1.6"
+  resolved "http://registry.npmjs.org/sax/-/sax-1.1.6.tgz#5d616be8a5e607d54e114afae55b7eaf2fcc3240"
 
 schema-utils@^0.4.4, schema-utils@^0.4.5:
   version "0.4.7"
@@ -2643,6 +2653,13 @@ timers-browserify@^2.0.4:
   resolved "https://registry.yarnpkg.com/timers-browserify/-/timers-browserify-2.0.10.tgz#1d28e3d2aadf1d5a5996c4e9f95601cd053480ae"
   dependencies:
     setimmediate "^1.0.4"
+
+tmx-parser@^1.5.0:
+  version "1.5.0"
+  resolved "https://registry.yarnpkg.com/tmx-parser/-/tmx-parser-1.5.0.tgz#ef9cb4c0156c3c90aeea001175a2b9ad41c3c77b"
+  dependencies:
+    pend "~1.2.0"
+    sax "~1.1.2"
 
 to-arraybuffer@^1.0.0:
   version "1.0.1"

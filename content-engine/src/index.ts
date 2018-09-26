@@ -1,4 +1,8 @@
 import * as PIXI from 'pixi.js';
+
+import TiledMap from './tiledmap/TiledMap';
+import tiledMapLoader from './tiledmap/tiledMapLoader';
+
 import {
     backgroundColor,
     DirectionFlag,
@@ -173,11 +177,14 @@ function drawMap(mapData: MapData) {
 }
 
 function onResourcesLoaded(loader: PIXI.loaders.Loader, resources: PIXI.loaders.ResourceDictionary) {
+    const tileMap = new TiledMap(resources.map);
+    app.stage.addChild(tileMap);
+
     const spritesheetTexture = resources.tileset_image.texture;
     // spritesheetTexture.sourceScale = 1;
     const spriteSheet = new PIXI.Spritesheet(spritesheetTexture.baseTexture, resources.tileset.data);
     spriteSheet.parse(() => {
-        drawMap(resources.map.data);
+        // drawMap(resources.map.data);
 
         for (const id in statements) {
             if (statements.hasOwnProperty(id)) {
@@ -237,6 +244,8 @@ function init() {
 
     document.body.appendChild(app.view);
 
+    PIXI.loaders.Loader.addPixiMiddleware(tiledMapLoader);
+    PIXI.loader.use(tiledMapLoader());
     const loader = new PIXI.loaders.Loader();
     for (const id in statements) {
         if (statements.hasOwnProperty(id)) {
@@ -247,7 +256,7 @@ function init() {
         .add('bunny', 'bunny.png')
         .add('tileset_image', 'towerDefense.svg')
         .add('tileset', 'towerDefense.json')
-        .add('map', 'map.json')
+        .add('map', 'assets/map_02.tmx')
         .load(onResourcesLoaded);
 
     const WEBSOCKET_URL = 'ws://localhost:9000/';
