@@ -1,9 +1,13 @@
+import { Store } from 'redux';
+
 import { backgroundColor } from '../constants';
 import TiledMap from '../tiledmap/TiledMap';
 import TileLayer from '../tiledmap/TileLayer';
 import GameCommunication from './communication';
 import { MarkerMessage } from './game-types';
 import { GameResourceManager, GameResources } from './resource-manager';
+import { updateStatement } from './state/actions';
+import store from './state/store';
 import statements from './statements';
 
 export default class MainGame {
@@ -20,7 +24,11 @@ export default class MainGame {
     private rectangle?: PIXI.Graphics;
     private points: PIXI.Graphics[] = [];
 
+    private store: Store;
+
     constructor() {
+        this.store = store;
+
         this.communication = new GameCommunication();
         this.communication.onMarkerMessage.add(this.onMarkerMessage.bind(this));
 
@@ -104,10 +112,21 @@ export default class MainGame {
             );
             transformMatrix.fromArray([...transform[0], ...transform[1], ...transform[2]]);
 
-            if (statements[ids[0]]) {
-                const sprite = statements[ids[0]].sprite;
-                if (sprite) {
-                    this.app.stage.addChild(sprite);
+            const id = ids[0];
+            const statement = statements[id];
+
+            if (statement) {
+                this.store.dispatch(updateStatement({
+                    id,
+                    position: {
+                        x: transform[0][2],
+                        y: transform[1][2],
+                    },
+                    statement,
+                }));
+
+                if (statement.sprite) {
+                    this.app.stage.addChild(statement.sprite);
                     // (sprite.transform as PIXI.TransformStatic).setFromMatrix(transformMatrix);
                 } else {
                     console.error('sprite not defined', ids[0]);

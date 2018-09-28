@@ -13,3 +13,14 @@ export interface Statement {
 export interface StatementList {
     [markerId: number]: Statement;
 }
+
+export interface Point {
+    x: number;
+    y: number;
+}
+
+export interface StatementInstance {
+    id: number;
+    statement: Statement;
+    position: Point;
+}
