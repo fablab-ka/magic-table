@@ -10,7 +10,7 @@ export default class ImageLayer extends PIXI.Container {
 
         if (layer.image && layer.image.source) {
             const ct = PIXI.Sprite.fromImage as any;
-            this.addChild(new ct(layer.image.source));
+            this.addChild(new ct('assets/' + layer.image.source));
         }
     }
 }

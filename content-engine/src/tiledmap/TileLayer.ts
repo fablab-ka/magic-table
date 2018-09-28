@@ -1,4 +1,5 @@
 import Tile from './Tile';
+import TileSet from './TileSet';
 
 export default class TileLayer extends PIXI.Container {
     public static findTileset(gid: any, tileSets: any) {
@@ -13,19 +14,19 @@ export default class TileLayer extends PIXI.Container {
     }
 
     public layer: any;
-    public tileSets: any;
-    public tiles: any[];
+    public tileSets: TileSet[];
+    public tiles: Tile[];
 
-    constructor(layer: any, tileSets: any) {
+    constructor(layerData: any, tileSets: TileSet[]) {
         super();
 
-        this.layer = layer;
+        this.layer = layerData;
         this.tileSets = tileSets;
 
-        this.alpha = parseFloat(layer.opacity);
+        this.alpha = parseFloat(layerData.opacity);
         this.tiles = [];
 
-        Object.assign(this, layer);
+        Object.assign(this, layerData);
 
         this.create();
     }

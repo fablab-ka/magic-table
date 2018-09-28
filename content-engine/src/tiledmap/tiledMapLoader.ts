@@ -21,7 +21,7 @@ export default () => {
 
             map.tileSets.forEach((tileset: any) => {
                 if (!(tileset.image.source in this.resources)) {
-                    this.add(tileset.image.source, `${tileset.image.source}`, loadOptions);
+                    this.add(tileset.image.source, `assets/${tileset.image.source}`, loadOptions);
                 }
             });
 

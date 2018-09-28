@@ -10,6 +10,7 @@
   "dependencies": {
     "@types/pixi.js": "^4.8.1",
     "express": "^4.16.3",
+    "micro-signals": "^2.0.0",
     "pixi-tiledmap": "^1.9.3",
     "pixi.js": "^4.8.2",
     "puppeteer": "^1.5.0",
