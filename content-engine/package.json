@@ -4,7 +4,7 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "start": "node index.js",
+    "start": "npx webpack --watch & node index.js",
     "build": "tsc"
   },
   "dependencies": {

@@ -2,7 +2,8 @@ import { Signal } from 'micro-signals';
 
 import { MarkerMessage } from './game-types';
 
-const WEBSOCKET_URL = 'ws://localhost:9000/';
+// const WEBSOCKET_URL = 'ws://localhost:9000/';
+const WEBSOCKET_URL = 'ws://192.168.1.95:9000/';
 
 export default class GameCommunication {
     public onMarkerMessage: Signal<MarkerMessage>;
@@ -47,8 +48,10 @@ export default class GameCommunication {
                 this.onMessageBlob(reader.result);
             };
             reader.readAsText(msg.data);
+        } else if (typeof msg.data === 'string') {
+            this.onMessageBlob(msg.data);
         } else {
-            console.log('unexcpeted message data', msg);
+            console.log('unexpected message data', msg);
         }
     }
 
