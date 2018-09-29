@@ -1,3 +1,3 @@
-pip install -R requirements.txt
+pip install -r requirements.txt
 cd content-engine
 npm install
