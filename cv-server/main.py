@@ -82,7 +82,7 @@ def start_camera_analysis():
 
             send_transforms(clonedClients, transforms)
 
-        cv2.imshow('frame', frame)
+        # cv2.imshow('frame', frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             continue
 
