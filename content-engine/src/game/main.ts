@@ -18,7 +18,7 @@ export default class MainGame {
 
     private map?: TiledMap;
     private currentActiveElementsWiggle: number = 0;
-    private currentActiveElementsStep: number = 1;
+    private currentActiveElementsStep: number = .3;
 
     private bunny?: PIXI.Sprite;
     private rectangle?: PIXI.Graphics;
@@ -170,14 +170,18 @@ export default class MainGame {
         if (this.map) {
             (this.map.layers[2] as TileLayer).tiles.forEach((tile) => {
                 tile.y += this.currentActiveElementsWiggle * 0.1;
+                /* if (tile.scale) {
+                    tile.anchor.x = 0.5;
+                    tile.scale.x = (this.currentActiveElementsWiggle + 10) / 20;
+                } */
             });
         }
 
         this.currentActiveElementsWiggle += this.currentActiveElementsStep;
         if (this.currentActiveElementsWiggle >= 10 && this.currentActiveElementsStep > 0) {
-            this.currentActiveElementsStep = -1;
+            this.currentActiveElementsStep = -.3;
         } else if (this.currentActiveElementsWiggle <= -10 && this.currentActiveElementsStep < 0) {
-            this.currentActiveElementsStep = 1;
+            this.currentActiveElementsStep = .3;
         }
     }
 }
