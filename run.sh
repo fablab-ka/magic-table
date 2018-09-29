@@ -1,5 +1,5 @@
 cd cv-server
-python main.py &
+python3 main.py &
 
 cd ../content-engine
 npx webpack --watch &

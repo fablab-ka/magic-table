@@ -15,7 +15,7 @@ calibration = np.load('./calibration_1080.npz')
 dist_coeffs = calibration['dist_coeffs']
 camera_matrix = calibration['camera_matrix']
 projector_to_camera_offset = np.array([0, 0, 0])
-camera_index = 2
+camera_index = 0
 
 def send_transforms(clients, transforms):
     message = json.dumps(transforms)
