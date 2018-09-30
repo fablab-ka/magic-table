@@ -81,8 +81,8 @@ export default class MainGame {
         this.rectangle.beginFill(0x66CCFF);
         this.rectangle.drawRect(0, 0, 800, 800);
         this.rectangle.endFill();
-        this.rectangle.x = 170;
-        this.rectangle.y = 170;
+        this.rectangle.x = 0;
+        this.rectangle.y = 0;
         this.app.stage.addChild(this.rectangle);
 
         for (let i = 0; i < 4; i++) {
@@ -109,9 +109,7 @@ export default class MainGame {
                 transform[1][1],
             ];
             const transformMatrix = new PIXI.Matrix(
-                // fast: a, c, b, d
-                d, c, b, a,
-
+                a, c, b, d,
                 transform[0][2],
                 transform[1][2],
             );
