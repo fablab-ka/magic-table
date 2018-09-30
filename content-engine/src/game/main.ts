@@ -62,10 +62,10 @@ export default class MainGame {
                 statements[id].sprite.anchor.set(0.5);
 
                 const tileSprite = new PIXI.Sprite(resources[`statement_${id}`].texture);
-                tileSprite.anchor.set(0, 0.5);
+                /*tileSprite.anchor.set(0, 0.5);
                 tileSprite.position.x = -1;
                 tileSprite.scale.x = 0.025;
-                tileSprite.scale.y = 0.025;
+                tileSprite.scale.y = 0.025;*/
                 // tileSprite.position.x = -10;
                 statements[id].sprite.addChild(tileSprite);
                 this.app.stage.addChild(statements[id].sprite);
@@ -83,7 +83,7 @@ export default class MainGame {
         this.rectangle.endFill();
         this.rectangle.x = 170;
         this.rectangle.y = 170;
-        // app.stage.addChild(this.rectangle);
+        this.app.stage.addChild(this.rectangle);
 
         for (let i = 0; i < 4; i++) {
             this.points.push(new PIXI.Graphics());
@@ -102,15 +102,19 @@ export default class MainGame {
         for (const data of message) {
             const { ids, marker, transform } = data;
 
-            const transformMatrix = new PIXI.Matrix(
+            const [a, b, c, d] = [
                 transform[0][0],
                 transform[0][1],
                 transform[1][0],
                 transform[1][1],
+            ];
+            const transformMatrix = new PIXI.Matrix(
+                // fast: a, c, b, d
+                d, c, b, a,
+
                 transform[0][2],
                 transform[1][2],
             );
-            transformMatrix.fromArray([...transform[0], ...transform[1], ...transform[2]]);
 
             const id = ids[0];
             const statement = statements[id];
@@ -127,7 +131,7 @@ export default class MainGame {
 
                 if (statement.sprite) {
                     this.app.stage.addChild(statement.sprite);
-                    // (sprite.transform as PIXI.TransformStatic).setFromMatrix(transformMatrix);
+                    // (statement.sprite.transform as PIXI.TransformStatic).setFromMatrix(transformMatrix);
                 } else {
                     console.error('sprite not defined', ids[0]);
                 }
@@ -142,11 +146,15 @@ export default class MainGame {
                 if (this.map) {
                     this.app.stage.addChild(this.map);
                 }
+                if (this.rectangle) {
+                    this.app.stage.addChild(this.rectangle);
+                    (this.rectangle.transform as PIXI.TransformStatic).setFromMatrix(transformMatrix);
+                }
                 if (this.bunny) {
                     this.app.stage.addChild(this.bunny);
-                    // (bunny.transform as PIXI.TransformStatic).setFromMatrix(transformMatrix);
-                    this.bunny.position.x = transform[0][2];
-                    this.bunny.position.y = transform[1][2];
+                    (this.bunny.transform as PIXI.TransformStatic).setFromMatrix(transformMatrix);
+                    // this.bunny.position.x = transform[0][2];
+                    // this.bunny.position.y = transform[1][2];
                 }
                 /* bunny.proj.mapSprite(bunny, [
                         new PIXI.Point(marker[0][0][0], marker[0][0][1]),

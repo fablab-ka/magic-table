@@ -24,13 +24,11 @@ const statements: StatementList = {};
 
 for (const key in Command) {
     if (Command.hasOwnProperty(key)) {
-        const command = key as Command;
+        const command = Command[key] as Command;
 
         const ids = statementIdMap[command];
-        for (const id in ids) {
-            if (ids.hasOwnProperty(id)) {
-                statements[id] = createStatementFromCommand(command);
-            }
+        for (const id of ids) {
+            statements[id] = createStatementFromCommand(command);
         }
     }
 }
