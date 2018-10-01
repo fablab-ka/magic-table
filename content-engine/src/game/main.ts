@@ -150,7 +150,7 @@ export default class MainGame {
                 }
                 if (this.bunny) {
                     this.app.stage.addChild(this.bunny);
-                    (this.bunny.transform as PIXI.TransformStatic).setFromMatrix(transformMatrix);
+                    // (this.bunny.transform as PIXI.TransformStatic).setFromMatrix(transformMatrix);
                     // this.bunny.position.x = transform[0][2];
                     // this.bunny.position.y = transform[1][2];
                 }

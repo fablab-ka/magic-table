@@ -6,17 +6,11 @@ import traceback
 import numpy as np
 import json
 from SimpleWebSocketServer import SimpleWebSocketServer, WebSocket
+from frame_processor import FrameProcessor
 
 clients = []
 server = None
-serverRunning = False
-marker_length_in_meter = 1
-calibration = np.load('./calibration_1080.npz')
-dist_coeffs = calibration['dist_coeffs']
-camera_matrix = calibration['camera_matrix']
-projector_to_camera_offset = np.array([0, 0, 0])
-camera_index = 0
-
+server_running = False
 def send_transforms(clients, transforms):
     message = json.dumps(transforms)
     for client in clients:
@@ -25,62 +19,19 @@ def send_transforms(clients, transforms):
 def start_camera_analysis():
     print("Starting Camera Analysis")
 
-    cap = cv2.VideoCapture(camera_index)
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
-    dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_6X6_250)
+    calibration = np.load('./calibration_1080.npz')
+    frame_processor = FrameProcessor(calibration)
 
-    while serverRunning:
-        ret, frame = cap.read()
-
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        (markers, ids, n) = cv2.aruco.detectMarkers(gray, dictionary)
-        if len(markers) > 0:
-            cv2.aruco.drawDetectedMarkers(frame, markers, ids)
-
-            rvecs, tvecs, points = cv2.aruco.estimatePoseSingleMarkers(
-                markers,
-                marker_length_in_meter,
-                camera_matrix,
-                dist_coeffs
-            )
-            # todo matrix multiplication with calibration matrix
-            tvecs += projector_to_camera_offset
-
-            transforms = []
-            for i in range(len(markers)):
-                imgpts, jac = cv2.projectPoints(
-                    points, rvecs[i], tvecs[i], camera_matrix, dist_coeffs
-                )
-
-                #print(points)
-                width, height = 800, 800
-                transform = cv2.getPerspectiveTransform(
-                    np.array(
-                        [
-                            [0, 0],
-                            [width, 0],
-                            [width, height],
-                            [0, height]
-                        ],
-                        np.float32
-                    ),
-                    imgpts
-                )
-                #print(ids)
-
-                transforms.append({
-                    'marker': imgpts.tolist(),
-                    'ids': ids[i].tolist(),
-                    'transform': transform.tolist()
-                })
-
+    while server_running:
+        frame_processor.capture()
+        transforms = frame_processor.proccess()
+        if transforms:
             try:
-                clonedClients = clients[:]
+                cloned_clients = clients[:]
             except:
                 continue
 
-            send_transforms(clonedClients, transforms)
+            send_transforms(cloned_clients, transforms)
 
         # cv2.imshow('frame', frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -91,27 +42,8 @@ def start_camera_analysis():
 
 
 class SimpleWebSocket(WebSocket):
-
     def handleMessage(self):
         print("WS message", len(self.data))
-
-        #bmpData, errors = ffmpeg.communicate(input=self.data)
-
-        #try:
-            #print("bmpData read", len(bmpData))
-            #image = cv2.imdecode(np.frombuffer(bmpData, dtype=np.uint8), 1)
-
-            #nparr = np.asarray(self.data, np.uint8)
-
-            #print(nparr)
-
-            #image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-            #print("img decoded", image.shape)
-
-            #cv2.imshow('window', image)
-        # except Exception as e:
-        #     print(e)
-        #     traceback.print_exc(file=sys.stdout)
 
     def handleConnected(self):
         print("WS connected")
@@ -123,22 +55,22 @@ class SimpleWebSocket(WebSocket):
 
 
 def run_server():
-    global server, serverRunning
+    global server, server_running
 
     print("Starting Server")
 
     server = SimpleWebSocketServer('', 9000, SimpleWebSocket, selectInterval=(1000.0 / 15) / 1000)
 
-    serverRunning = True
+    server_running = True
 
-    analysisThread = threading.Thread(target=start_camera_analysis)
-    analysisThread.start()
+    analysis_thread = threading.Thread(target=start_camera_analysis)
+    analysis_thread.start()
 
     try:
         server.serveforever()
     except KeyboardInterrupt:
-        serverRunning = False
-        analysisThread.join()
+        server_running = False
+        analysis_thread.join()
 
 
 if __name__ == '__main__':
