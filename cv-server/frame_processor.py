@@ -8,15 +8,16 @@ class FrameProcessor:
         self.marker_length_in_meter = 1
         self.projector_to_camera_offset = np.array([0, 0, 0])
 
-        self.cap = cv2.VideoCapture(self.camera_index)
-        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
-        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
+        self.dist_coeffs = calibration['dist_coeffs']
+        self.camera_matrix = calibration['camera_matrix']
+
         self.dictionary = cv2.aruco.getPredefinedDictionary(
             cv2.aruco.DICT_6X6_250)
 
-
-        self.dist_coeffs = calibration['dist_coeffs']
-        self.camera_matrix = calibration['camera_matrix']
+    def init_camera(self):
+        self.cap = cv2.VideoCapture(self.camera_index)
+        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
 
     def capture(self):
         ret, self.frame = self.cap.read()
@@ -34,7 +35,7 @@ class FrameProcessor:
 
         return result
 
-    def calculate_transforms(self, markers):
+    def calculate_transforms(self, markers, ids):
         result = []
 
         rvecs, tvecs, points = cv2.aruco.estimatePoseSingleMarkers(
@@ -49,7 +50,7 @@ class FrameProcessor:
         result = []
         for i in range(len(markers)):
             result.append(self.marker_to_transform_data(
-                points, rvecs[i], tvecs[i]), ids[i])
+                points, rvecs[i], tvecs[i], ids[i]))
 
         return result
 

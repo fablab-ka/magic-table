@@ -21,6 +21,7 @@ def start_camera_analysis():
 
     calibration = np.load('./calibration_1080.npz')
     frame_processor = FrameProcessor(calibration)
+    frame_processor.init_camera()
 
     while server_running:
         frame_processor.capture()
@@ -36,7 +37,6 @@ def start_camera_analysis():
         # cv2.imshow('frame', frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             continue
-
 
     print("Stopping Camera Analysis")
 
