@@ -1,11 +1,12 @@
 {
-  "name": "puppeteer-engine",
+  "name": "content-engine",
   "version": "1.0.0",
   "main": "index.js",
   "license": "MIT",
   "scripts": {
+    "test": "npx webpack & node tests/run.js",
     "start": "npx webpack --watch & node index.js",
-    "build": "tsc"
+    "build": "npx webpack"
   },
   "dependencies": {
     "@types/pixi.js": "^4.8.1",
