@@ -2,8 +2,8 @@ import { Signal } from 'micro-signals';
 
 import { MarkerMessage } from './game-types';
 
-// const WEBSOCKET_URL = 'ws://localhost:9000/';
-const WEBSOCKET_URL = 'ws://192.168.1.95:9000/';
+const WEBSOCKET_URL = 'ws://localhost:9000/';
+// const WEBSOCKET_URL = 'ws://192.168.1.95:9000/';
 
 export default class GameCommunication {
     public onMarkerMessage: Signal<MarkerMessage>;

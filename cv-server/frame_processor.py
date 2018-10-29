@@ -4,7 +4,7 @@ import numpy as np
 
 class FrameProcessor:
     def __init__(self, calibration):
-        self.camera_index = 0
+        self.camera_index = 2
         self.marker_length_in_meter = 1
         self.projector_to_camera_offset = np.array([0, 0, 0])
 
@@ -48,19 +48,19 @@ class FrameProcessor:
         tvecs += self.projector_to_camera_offset
 
         result = []
+        # print(ids)
         for i in range(len(markers)):
             result.append(self.marker_to_transform_data(
                 points, rvecs[i], tvecs[i], ids[i]))
 
         return result
 
-
     def marker_to_transform_data(self, points, rvec, tvec, idlist):
         imgpts, jac = cv2.projectPoints(
             points, rvec, tvec, self.camera_matrix, self.dist_coeffs
         )
 
-        #print(points)
+        # print(points)
         width, height = 800, 800
         transform = cv2.getPerspectiveTransform(
             np.array(
@@ -74,7 +74,7 @@ class FrameProcessor:
             ),
             imgpts
         )
-        #print(ids)
+        # print(idlist)
 
         return {
             'marker': imgpts.tolist(),
