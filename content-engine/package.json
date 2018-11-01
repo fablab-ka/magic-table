@@ -4,7 +4,9 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "test": "npx webpack & node tests/run.js",
+    "test:unit": "jest",
+    "test:unit:watch": "jest --watch --notify",
+    "test:cv": "npx webpack & node tests/run.js",
     "start": "npx webpack --watch & node index.js",
     "build": "npx webpack"
   },
@@ -24,5 +26,10 @@
     "webpack": "^4.19.1",
     "webpack-cli": "^3.1.1",
     "ws": "^5.2.2"
+  },
+  "devDependencies": {
+    "jest": "^23.6.0",
+    "@types/jest": "^23.3.9",
+    "ts-jest": "^23.10.4"
   }
 }

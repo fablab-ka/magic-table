@@ -1,5 +1,5 @@
-const setup = require('./setupTest.js');
+const { test } = require('./runner.js');
 
-setup(function () {
+test(function () {
 
 });

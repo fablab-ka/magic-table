@@ -1,4 +1,4 @@
-module.exports = function (callback) {
+const executeTest = function (callback) {
     const puppeteer = require('puppeteer');
     const express = require('express');
     const http = require('http');
@@ -22,6 +22,7 @@ module.exports = function (callback) {
         });
         const page = await browser.newPage();
         await page.goto('http://localhost:3000/');
+
         await page.screenshot({ path: 'example.png' });
 
         await browser.close();
@@ -39,4 +40,8 @@ module.exports = function (callback) {
     wss.on('connection', (ws, req) => {
         console.log('WS Connection reveiced');
     });
-}
+};
+
+module.exports = {
+    test: executeTest
+};
