@@ -2,6 +2,7 @@ import { combineReducers } from 'redux';
 import { ActionType, getType, StateType } from 'typesafe-actions';
 
 import { StatementInstance } from '../../types';
+import { Command } from '../interpreter/types';
 
 export interface TurtleState {
     position: {
@@ -41,18 +42,18 @@ export const turtlePositionReducer = (
             switch (action.payload) {
                 case Command.Forward:
                     position = {
-                        x: position.x,
-                        y: position.y,
+                        x: Math.floor(position.x + Math.sin(direction)),
+                        y: Math.floor(position.y + Math.cos(direction)),
                     };
                     break;
                 case Command.Left:
-                    direction -= 90;
+                    direction -= Math.PI / 2;
                     break;
                 case Command.Right:
-                    direction += 90;
+                    direction += Math.PI / 2;
                     break;
             }
-            direction = (direction + 360) % 360;
+            direction = direction % Math.PI;
             return {
                 direction,
                 position,
@@ -68,6 +69,5 @@ export const gameReducer = combineReducers({
 });
 
 import * as actions from './actions';
-import { Command } from '../interpreter/types';
 export type GameAction = ActionType<typeof actions>;
 export type GameState = StateType<typeof gameReducer>;
