@@ -1,5 +1,5 @@
 import Interpreter from "../interpreter";
-import { Token, TokenType, ParameterType, Command } from "../types";
+import { Command, ParameterType, Token, TokenType } from "../types";
 
 describe("The Interpreter", () => {
   it("doesn't accept missing Main tokens", () => {
