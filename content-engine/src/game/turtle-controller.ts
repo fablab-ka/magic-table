@@ -1,5 +1,9 @@
 import { Store } from "redux";
-import { getTurtleMarkerPosition, getTurtlePosition } from "./state/selectors";
+import {
+  getTurtleMarkerPosition,
+  getTurtleMarkerRotation,
+  getTurtlePosition
+} from "./state/selectors";
 
 const MOVEMENT_DURATION = 200;
 
@@ -50,14 +54,17 @@ export default class TurtleController {
     const state = this.store.getState();
     const targetPosition = getTurtlePosition(state);
     const currentPosition = getTurtleMarkerPosition(state);
-    // const currentRotation = getTurtleMarkerRotation(state);
+    const currentRotation = getTurtleMarkerRotation(state);
 
-    if (currentPosition) {
+    if (currentPosition && currentRotation) {
       const movementVector = [
         targetPosition.x - currentPosition[0],
         targetPosition.y - currentPosition[1]
       ];
 
+      const targetRotation = 0; // TODO get angle of movementVector
+
+      const rotationDelta = targetRotation - currentRotation;
       // TODO transmit movement command to turtle
     }
   }

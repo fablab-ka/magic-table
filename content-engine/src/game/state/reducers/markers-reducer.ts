@@ -19,11 +19,26 @@ export default (
 ): MarkerState => {
   switch (action.type) {
     case getType(updateMarkers):
+      const markerMessage = action.payload.find(
+        msg => msg.ids[0] === MarkerMap.TurtleMarker
+      );
+      let turtleMarkerInfo: MarkerInfo | undefined;
+      if (markerMessage) {
+        const position: [number, number] = [
+          markerMessage.transform[0][2],
+          markerMessage.transform[1][2]
+        ];
+        const rotation = 0; // TODO
+        turtleMarkerInfo = {
+          id: MarkerMap.TurtleMarker,
+          position,
+          rotation,
+          transform: markerMessage.transform
+        };
+      }
       return {
         ...state,
-        turtleMarkerInfo: action.payload.find(
-          markerInfo => markerInfo.id === MarkerMap.TurtleMarker
-        )
+        turtleMarkerInfo
       };
 
     default:

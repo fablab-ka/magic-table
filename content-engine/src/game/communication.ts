@@ -1,63 +1,71 @@
-import { Signal } from 'micro-signals';
+import { Signal } from "micro-signals";
+import { Store } from "redux";
 
-import { MarkerMessage } from './game-types';
+import { MarkerMessage } from "./game-types";
+import { updateMarkers } from "./state/actions";
 
-const WEBSOCKET_URL = 'ws://localhost:9000/';
+const WEBSOCKET_URL = "ws://localhost:9000/";
 // const WEBSOCKET_URL = 'ws://192.168.1.95:9000/';
 
 export default class GameCommunication {
-    public onMarkerMessage: Signal<MarkerMessage>;
+  public onMarkerMessage: Signal<MarkerMessage>;
 
-    private socket?: WebSocket = undefined;
+  private socket?: WebSocket = undefined;
+  private store: Store;
 
-    constructor() {
-        this.onMarkerMessage = new Signal<MarkerMessage>();
-    }
+  constructor(store: Store) {
+    this.store = store;
 
-    public start() {
-        console.log('Connecting to WebSocket at', WEBSOCKET_URL);
+    this.onMarkerMessage = new Signal<MarkerMessage>();
+  }
 
-        this.socket = new WebSocket(WEBSOCKET_URL);
-        this.socket.addEventListener('open', (e) => {
-            console.log('WebSocket Open', e);
-        });
+  public start() {
+    console.log("Connecting to WebSocket at", WEBSOCKET_URL);
 
-        this.socket.addEventListener('close', (e) => {
-            console.log('WebSocket Close', e);
-        });
+    this.socket = new WebSocket(WEBSOCKET_URL);
+    this.socket.addEventListener("open", e => {
+      console.log("WebSocket Open", e);
+    });
 
-        this.socket.addEventListener('error', (e) => {
-            console.log('WebSocket Close', e);
-        });
+    this.socket.addEventListener("close", e => {
+      console.log("WebSocket Close", e);
+    });
 
-        this.socket.addEventListener('message', (msg) => {
-            this.handleMessage(msg);
-        });
-    }
+    this.socket.addEventListener("error", e => {
+      console.log("WebSocket Close", e);
+    });
 
-    private handleMessage(msg: MessageEvent) {
-        // console.log('WebSocket Message', msg);
+    this.socket.addEventListener("message", msg => {
+      this.handleMessage(msg);
+    });
+  }
 
-        if (msg.data instanceof Blob) {
-            const reader = new FileReader();
-            reader.onload = () => {
-                if (typeof reader.result !== 'string') {
-                    throw new Error('Unable to parse message ' + JSON.stringify(reader.result));
-                }
+  private handleMessage(msg: MessageEvent) {
+    // console.log('WebSocket Message', msg);
 
-                this.onMessageBlob(reader.result);
-            };
-            reader.readAsText(msg.data);
-        } else if (typeof msg.data === 'string') {
-            this.onMessageBlob(msg.data);
-        } else {
-            console.log('unexpected message data', msg);
+    if (msg.data instanceof Blob) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result !== "string") {
+          throw new Error(
+            "Unable to parse message " + JSON.stringify(reader.result)
+          );
         }
-    }
 
-    private onMessageBlob(blob: string) {
-        const markerMessage = JSON.parse(blob);
-
-        this.onMarkerMessage.dispatch(markerMessage);
+        this.onMessageBlob(reader.result);
+      };
+      reader.readAsText(msg.data);
+    } else if (typeof msg.data === "string") {
+      this.onMessageBlob(msg.data);
+    } else {
+      console.log("unexpected message data", msg);
     }
+  }
+
+  private onMessageBlob(blob: string) {
+    const markerMessage = JSON.parse(blob) as MarkerMessage;
+
+    this.onMarkerMessage.dispatch(markerMessage);
+    this.store.dispatch(updateMarkers(markerMessage));
+  }
 }

@@ -5,3 +5,7 @@ export const getTurtleMarkerPosition = (state: GameState) =>
   state.markers.turtleMarkerInfo
     ? state.markers.turtleMarkerInfo.position
     : undefined;
+export const getTurtleMarkerRotation = (state: GameState) =>
+  state.markers.turtleMarkerInfo
+    ? state.markers.turtleMarkerInfo.rotation
+    : undefined;
