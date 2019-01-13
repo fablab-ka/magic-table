@@ -4,7 +4,7 @@ import numpy as np
 
 class FrameProcessor:
     def __init__(self, calibration):
-        self.camera_index = 2
+        self.camera_index = 0
         self.marker_length_in_meter = 1
         self.projector_to_camera_offset = np.array([0, 0, 0])
 

@@ -83,7 +83,7 @@ describe("The Interpreter", () => {
     expect(interpreter.getHasEnded()).toBeTruthy();
   });
 
-  it.only("Handles condition", () => {
+  it("Handles condition", () => {
     const dispatch = jest.fn();
     const interpreter = new Interpreter(dispatch);
 

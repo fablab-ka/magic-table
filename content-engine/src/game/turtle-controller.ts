@@ -5,13 +5,15 @@ import {
   getTurtlePosition
 } from "./state/selectors";
 
-const MOVEMENT_DURATION = 200;
+const MOVEMENT_DURATION = 255;
+const MOVEMENT_VELOCITY = 255;
 
 enum TurtleDirection {
   Stop = "0",
-  TurnLeftWheel = "1",
-  TurnRightWheel = "2",
-  Forward = "3"
+  RotateLeft = "1",
+  RotateRight = "2",
+  Forward = "3",
+  Backward = "4"
 }
 
 export default class TurtleController {
@@ -53,8 +55,8 @@ export default class TurtleController {
 
     const state = this.store.getState();
     const targetPosition = getTurtlePosition(state);
-    const currentPosition = getTurtleMarkerPosition(state);
     const currentRotation = getTurtleMarkerRotation(state);
+    const currentPosition = getTurtleMarkerPosition(state);
 
     if (currentPosition && currentRotation) {
       const movementVector = [
@@ -64,6 +66,9 @@ export default class TurtleController {
 
       const targetRotation = 0; // TODO get angle of movementVector
 
+      // if (movementVector[0] <= 0) {
+      // } else {
+      // }
       const rotationDelta = targetRotation - currentRotation;
       // TODO transmit movement command to turtle
     }
@@ -71,7 +76,9 @@ export default class TurtleController {
 
   private sendMovement(direction: TurtleDirection) {
     if (this.connection) {
-      const commandstr = `#${direction}${MOVEMENT_DURATION.toString(16)}`;
+      const velocity = MOVEMENT_VELOCITY.toString(16);
+      const duration = MOVEMENT_DURATION.toString(16);
+      const commandstr = `#${direction}${velocity}${duration}`;
       console.log(`Sending movement command: ${commandstr}`);
       this.connection.send(commandstr);
     }
