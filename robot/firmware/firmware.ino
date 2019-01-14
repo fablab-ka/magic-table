@@ -40,6 +40,8 @@ float secondsPerFullTurn = rotationsPerSecond / wheelRotationsForFullTurn;
 float wheelRotationsForTenCentimenters = 1.06;
 float secondsPerTenCentimenters = rotationsPerSecond / wheelRotationsForTenCentimenters;
 
+int motorStopTime = -1;
+
 void setup()
 {
   pinMode(LED_BUILTIN, OUTPUT);
@@ -73,6 +75,14 @@ void loop()
   webSocket.loop();      // constantly check for websocket events
   server.handleClient(); // run the server
   ArduinoOTA.handle();   // listen for OTA events
+
+  if (motorStopTime > 0 && motorStopTime <= millis())
+  {
+    motorStopTime = -1;
+
+    M1.setmotor(_STOP);
+    M2.setmotor(_STOP);
+  }
 }
 
 void startWiFi()
@@ -296,9 +306,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t lenght)
 
         M1.setmotor(_CCW, velocity);
         M2.setmotor(_CW, velocity);
-        delay(getRotationTime(velocity, amount));
-        M1.setmotor(_STOP);
-        M2.setmotor(_STOP);
+        motorStopTime = millis() + getRotationTime(velocity, amount);
       }
       else if (dir == '2')
       {
@@ -309,9 +317,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t lenght)
 
         M1.setmotor(_CW, velocity);
         M2.setmotor(_CCW, velocity);
-        delay(getRotationTime(velocity, amount));
-        M1.setmotor(_STOP);
-        M2.setmotor(_STOP);
+        motorStopTime = millis() + getRotationTime(velocity, amount);
       }
       else if (dir == '3')
       {
@@ -322,9 +328,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t lenght)
 
         M1.setmotor(_CW, velocity);
         M2.setmotor(_CW, velocity);
-        delay(getMovementTime(velocity, amount));
-        M1.setmotor(_STOP);
-        M2.setmotor(_STOP);
+        motorStopTime = millis() + getMovementTime(velocity, amount);
       }
       else if (dir == '4')
       {
@@ -335,9 +339,7 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t lenght)
 
         M1.setmotor(_CCW, velocity);
         M2.setmotor(_CCW, velocity);
-        delay(getMovementTime(velocity, amount));
-        M1.setmotor(_STOP);
-        M2.setmotor(_STOP);
+        motorStopTime = millis() + getMovementTime(velocity, amount);
       }
     }
     break;
