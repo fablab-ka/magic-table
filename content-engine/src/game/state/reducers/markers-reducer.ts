@@ -28,6 +28,7 @@ export default (
           markerMessage.transform[0][2],
           markerMessage.transform[1][2]
         ];
+
         const rotation = 0; // TODO
         turtleMarkerInfo = {
           id: MarkerMap.TurtleMarker,

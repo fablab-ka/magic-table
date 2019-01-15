@@ -54,11 +54,15 @@ export default class TurtleController {
     }
 
     const state = this.store.getState();
-    const targetPosition = getTurtlePosition(state);
+    const targetPosition = { x: 700, y: 500 }; //getTurtlePosition(state);
     const currentRotation = getTurtleMarkerRotation(state);
     const currentPosition = getTurtleMarkerPosition(state);
 
-    if (currentPosition && currentRotation) {
+    if (
+      typeof currentPosition !== "undefined" &&
+      typeof currentRotation !== "undefined" &&
+      typeof targetPosition !== "undefined"
+    ) {
       const movementVector = [
         targetPosition.x - currentPosition[0],
         targetPosition.y - currentPosition[1]
@@ -71,6 +75,9 @@ export default class TurtleController {
       // }
       const rotationDelta = targetRotation - currentRotation;
       // TODO transmit movement command to turtle
+
+      console.log(targetRotation, rotationDelta);
+      // console.log(targetPosition, movementVector);
     }
   }
 

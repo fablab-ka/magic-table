@@ -1,5 +1,22 @@
 import cv2
 import numpy as np
+from scipy.linalg import expm
+
+
+def rot_euler(v, xyz):
+    ''' Rotate vector v (or array of vectors) by the euler angles xyz '''
+    # https://stackoverflow.com/questions/6802577/python-rotation-of-3d-vector
+    for theta, axis in zip(xyz, np.eye(3)):
+        v = np.dot(np.array(v), expm(np.cross(np.eye(3), axis*-theta)))
+    return v
+
+
+# https: // stackoverflow.com/questions/23472048/projecting-3d-points-to-2d-plane
+table_rvec = [-0.06196796, -2.93237183, -0.46390893]
+table_tvec = [-3.55630086, -3.30205484, 36.21805022]
+table_norm = rot_euler([0, 0, 1], table_rvec)
+e_1 = rot_euler([1, 0, 0], table_rvec)
+e_2 = rot_euler([0, 1, 0], table_rvec)
 
 
 class FrameProcessor:
@@ -60,6 +77,12 @@ class FrameProcessor:
             points, rvec, tvec, self.camera_matrix, self.dist_coeffs
         )
 
+        position2d = (
+            float(np.dot(e_1, tvec[0] - np.array(table_tvec))),
+            float(np.dot(e_2, tvec[0] - np.array(table_tvec)))
+        )
+        print(position2d)
+
         # print(points)
         width, height = 800, 800
         transform = cv2.getPerspectiveTransform(
@@ -79,5 +102,6 @@ class FrameProcessor:
         return {
             'marker': imgpts.tolist(),
             'ids': idlist.tolist(),
-            'transform': transform.tolist()
+            'transform': transform.tolist(),
+            'position2d': position2d
         }

@@ -9,6 +9,9 @@ import { GameResourceManager, GameResources } from "./resource-manager";
 import { updateStatement } from "./state/actions";
 import store from "./state/store";
 import statements from "./statements";
+import TurtleController from "./turtle-controller";
+
+const TURTLE_HOST_NAME = "magicrobot.flka.space";
 
 export default class MainGame {
   private communication: GameCommunication;
@@ -25,6 +28,8 @@ export default class MainGame {
   private points: PIXI.Graphics[] = [];
 
   private store: Store;
+
+  private turtleController: TurtleController;
 
   constructor() {
     this.store = store;
@@ -47,12 +52,16 @@ export default class MainGame {
             app.renderer.resize(window.innerWidth, window.innerHeight);
          });
          window.setTimeout(() => app.renderer.resize(window.innerWidth, window.innerHeight), 1000);*/
+
+    this.turtleController = new TurtleController(this.store, TURTLE_HOST_NAME);
   }
 
   public start() {
     document.body.appendChild(this.app.view);
 
     this.resourceManager.load();
+
+    this.turtleController.connect();
   }
 
   private onResourcesReady({ map, spriteSheet, resources }: GameResources) {
