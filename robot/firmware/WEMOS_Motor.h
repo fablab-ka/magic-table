@@ -13,6 +13,7 @@
 
 #define _MOTOR_A 0
 #define _MOTOR_B 1
+#define _MOTOR_BOTH 2
 
 #define _SHORT_BRAKE 0
 #define _CCW  1

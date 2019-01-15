@@ -87,7 +87,7 @@ export default class MainGame {
     this.rectangle.endFill();
     this.rectangle.x = 0;
     this.rectangle.y = 0;
-    this.app.stage.addChild(this.rectangle);
+    // this.app.stage.addChild(this.rectangle);
 
     for (let i = 0; i < 4; i++) {
       this.points.push(new PIXI.Graphics());

@@ -31,14 +31,27 @@ Motor M1(0x30, _MOTOR_A, 1000); //Motor A
 Motor M2(0x30, _MOTOR_B, 1000); //Motor B
 
 // wheel rotation calculations
-// 3cm wheels -> 9.42cm wheel circumference
+// 5.4cm wheels -> 17.1cm wheel circumference
+// 10 / 17.1cm -> 0.58 rotations for 10cm
 // wheels are 10cm apart -> 31.41cm robot rotation circumference
-// -> 31.41 / 9.42 = 3.33 wheel rotations for a full robot rotation
-float rotationsPerSecond = 5;
-float wheelRotationsForFullTurn = 3.33;
-float secondsPerFullTurn = rotationsPerSecond / wheelRotationsForFullTurn;
-float wheelRotationsForTenCentimenters = 1.06;
-float secondsPerTenCentimenters = rotationsPerSecond / wheelRotationsForTenCentimenters;
+// -> 29.217 / 17.1 = 1.65 wheel rotations for a full robot rotation
+float rotationsPerSecond[] = {1.04,
+                              2.775,
+                              5.96};
+float wheelRotationsForFullTurn[] = {2, 1.7, 1.65};
+float secondsPerFullTurn[] = {
+    wheelRotationsForFullTurn[0] / rotationsPerSecond[0],
+    wheelRotationsForFullTurn[1] / rotationsPerSecond[1],
+    wheelRotationsForFullTurn[2] / rotationsPerSecond[2]};
+float wheelRotationsForTenCentimenters[] = {1, 0.8, 1};
+float secondsPerTenCentimenters[] = {
+    wheelRotationsForTenCentimenters[0] / rotationsPerSecond[0],
+    wheelRotationsForTenCentimenters[1] / rotationsPerSecond[1],
+    wheelRotationsForTenCentimenters[2] / rotationsPerSecond[2]};
+int pwmPerVelocity[] = {
+    15,
+    40,
+    255};
 
 int motorStopTime = -1;
 
@@ -80,8 +93,11 @@ void loop()
   {
     motorStopTime = -1;
 
-    M1.setmotor(_STOP);
+    M2.setmotor(_SHORT_BRAKE);
+    M1.setmotor(_SHORT_BRAKE);
+    delay(100);
     M2.setmotor(_STOP);
+    M1.setmotor(_STOP);
   }
 }
 
@@ -288,76 +304,84 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t lenght)
     if (payload[0] == '#')
     { // we get a move command
       const char dir = payload[1];
-      uint32_t velocity = (uint32_t)strtol((const char *)&payload[2], NULL, 16);
-      uint32_t amount = (uint32_t)strtol((const char *)&payload[5], NULL, 16);
+      uint8_t velocity = (uint8_t)strtol((const char *)&payload[2], NULL, 8);
+      uint32_t amount = (uint32_t)strtol((const char *)&payload[4], NULL, 16);
+      Serial.println(velocity);
+
+      if (velocity < 0 || velocity > 2)
+      {
+        return;
+      }
 
       if (dir == '0')
       {
         Serial.println("Full stop");
+        M1.setmotor(_SHORT_BRAKE);
+        M2.setmotor(_SHORT_BRAKE);
         M1.setmotor(_STOP);
         M2.setmotor(_STOP);
       }
       else if (dir == '1')
       {
         Serial.print("Rotate Left ");
-        Serial.print(velocity);
+        Serial.print(pwmPerVelocity[velocity]);
         Serial.print(" ");
         Serial.println(amount);
 
-        M1.setmotor(_CCW, velocity);
-        M2.setmotor(_CW, velocity);
+        M1.setmotor(_CCW, pwmPerVelocity[velocity]);
+        M2.setmotor(_CW, pwmPerVelocity[velocity]);
         motorStopTime = millis() + getRotationTime(velocity, amount);
       }
       else if (dir == '2')
       {
         Serial.print("Rotate Right ");
-        Serial.print(velocity);
+        Serial.print(pwmPerVelocity[velocity]);
         Serial.print(" ");
         Serial.println(amount);
 
-        M1.setmotor(_CW, velocity);
-        M2.setmotor(_CCW, velocity);
+        M1.setmotor(_CW, pwmPerVelocity[velocity]);
+        M2.setmotor(_CCW, pwmPerVelocity[velocity]);
         motorStopTime = millis() + getRotationTime(velocity, amount);
       }
       else if (dir == '3')
       {
         Serial.print("Forward ");
-        Serial.print(velocity);
+        Serial.print(pwmPerVelocity[velocity]);
         Serial.print(" ");
         Serial.println(amount);
 
-        M1.setmotor(_CW, velocity);
-        M2.setmotor(_CW, velocity);
+        M1.setmotor(_CW, pwmPerVelocity[velocity]);
+        M2.setmotor(_CW, pwmPerVelocity[velocity]);
         motorStopTime = millis() + getMovementTime(velocity, amount);
       }
       else if (dir == '4')
       {
         Serial.print("Backward");
-        Serial.print(velocity);
+        Serial.print(pwmPerVelocity[velocity]);
         Serial.print(" ");
         Serial.println(amount);
 
-        M1.setmotor(_CCW, velocity);
-        M2.setmotor(_CCW, velocity);
+        M1.setmotor(_CCW, pwmPerVelocity[velocity]);
+        M2.setmotor(_CCW, pwmPerVelocity[velocity]);
         motorStopTime = millis() + getMovementTime(velocity, amount);
       }
+
+      delay(100);
     }
     break;
   }
 }
 
-int getMovementTime(int velocity, int amount)
+int getMovementTime(int velocity, int distance)
 {
-  float movementFactor = amount / 255.0;
-  float velocityFactor = velocity / 255.0;
-  return secondsPerTenCentimenters * (1 - velocityFactor) * movementFactor * 1000;
+  float movementFactor = distance / 255.0;
+  return secondsPerTenCentimenters[velocity] * movementFactor * 1000;
 }
 
-int getRotationTime(int velocity, int amount)
+int getRotationTime(int velocity, int rotationAmount)
 {
-  float rotationFactor = amount / 255.0;
-  float velocityFactor = velocity / 255.0;
-  return secondsPerFullTurn * (1 - velocityFactor) * rotationFactor * 1000;
+  float rotationFactor = rotationAmount / 255.0;
+  return secondsPerFullTurn[velocity] * rotationFactor * 1000;
 }
 
 String formatBytes(size_t bytes)

@@ -4,7 +4,7 @@
 address:
 	Shield I2C address
 freq:
-	PWM's frequency		
+	PWM's frequency
 */
 Motor::Motor(uint8_t address, uint8_t motor, uint32_t freq)
 {
@@ -16,7 +16,7 @@ Motor::Motor(uint8_t address, uint8_t motor, uint32_t freq)
 		_motor=_MOTOR_B;
 
 	Wire.begin();
-	
+
 	_address=address;
 
 	setfreq(freq);
@@ -26,8 +26,8 @@ Motor::Motor(uint8_t address, uint8_t motor, uint32_t freq)
 
 Motor::Motor(uint8_t address, uint8_t motor, uint32_t freq, uint8_t STBY_IO)
 {
-	
-	
+
+
 
 	_use_STBY_IO=true;
 	_STBY_IO=STBY_IO;
@@ -38,7 +38,7 @@ Motor::Motor(uint8_t address, uint8_t motor, uint32_t freq, uint8_t STBY_IO)
 		_motor=_MOTOR_B;
 
 	Wire.begin();
-	
+
 	_address=address;
 
 	setfreq(freq);
@@ -51,7 +51,7 @@ Motor::Motor(uint8_t address, uint8_t motor, uint32_t freq, uint8_t STBY_IO)
 /* setfreq() -- set PWM's frequency
 
 freq:
-	PWM's frequency	
+	PWM's frequency
 
 */
 void Motor::setfreq(uint32_t freq)
@@ -96,7 +96,7 @@ void Motor::setmotor(uint8_t dir, float pwm_val)
 		else
 			digitalWrite(_STBY_IO,HIGH);
 	}
-	
+
 	Wire.beginTransmission(_address);
 	Wire.write(_motor | (byte)0x10);
 	Wire.write(dir);
@@ -109,9 +109,6 @@ void Motor::setmotor(uint8_t dir, float pwm_val)
 	Wire.write((byte)(_pwm_val >> 8));
 	Wire.write((byte)_pwm_val);
 	Wire.endTransmission();     // stop transmitting
-
-
-	delay(100);
 }
 
 void Motor::setmotor(uint8_t dir)
