@@ -1,32 +1,11 @@
 import cv2
 import numpy as np
-from scipy.linalg import expm
-
-
-def rot_euler(v, xyz):
-    ''' Rotate vector v (or array of vectors) by the euler angles xyz '''
-    # https://stackoverflow.com/questions/6802577/python-rotation-of-3d-vector
-    for theta, axis in zip(xyz, np.eye(3)):
-        v = np.dot(np.array(v), expm(np.cross(np.eye(3), axis*-theta)))
-    return v
-
-
-# https: // stackoverflow.com/questions/23472048/projecting-3d-points-to-2d-plane
-# TODO get coordinates from table marker
-table_rvec = [-0.06196796, -2.93237183, -0.46390893]
-table_tvec = [-3.55630086, -3.30205484, 36.21805022]
-table_norm = rot_euler([0, 0, 1], table_rvec)
-table_offset = [0, 0]
-table_scale = 1
-pixel_per_meter = 1
-e_1 = rot_euler([1, 0, 0], table_rvec)
-e_2 = rot_euler([0, 1, 0], table_rvec)
 
 
 class FrameProcessor:
     def __init__(self, calibration):
         self.camera_index = 0
-        self.marker_length_in_meter = 1
+        self.marker_length_in_meter = 0.04
         self.projector_to_camera_offset = np.array([0, 0, 0])
 
         self.dist_coeffs = calibration['dist_coeffs']
@@ -76,21 +55,23 @@ class FrameProcessor:
 
         return result
 
-    def marker_to_transform_data(self, points, rvec, tvec, idlist):
+    def toMarkerData(self, imgpts, idlist, transform, position2d, rotation2D):
+        return {
+            'marker': imgpts.tolist(),
+            'ids': idlist.tolist(),
+            'transform': transform.tolist(),
+            'position2d': position2d,
+            'rotation2d': rotation2D
+        }
+
+    def projectPoints(self, points, rvec, tvec):
         imgpts, jac = cv2.projectPoints(
             points, rvec, tvec, self.camera_matrix, self.dist_coeffs
         )
+        return imgpts
 
-        position2d = (
-            (float(np.dot(e_1, tvec[0] -
-                          np.array(table_tvec))) + table_offset[0]) * table_scale,
-            (float(np.dot(e_2, tvec[0] -
-                          np.array(table_tvec))) + table_offset[1]) * table_scale
-        )
-        # print(position2d)
-
-        # print(points)
-        width, height = 800, 800
+    def getPerspectiveTransform(self, imgpts):
+        width, height = 1920, 1280
         transform = cv2.getPerspectiveTransform(
             np.array(
                 [
@@ -103,12 +84,17 @@ class FrameProcessor:
             ),
             imgpts
         )
-        # print(idlist)
 
-        return {
-            'marker': imgpts.tolist(),
-            'ids': idlist.tolist(),
-            'transform': transform.tolist(),
-            'position2d': position2d,
-            'rotation2d': float(rvec[0][0])
-        }
+    def calculate_position_2d(self, transform):
+        return (0, 0)
+
+    def calculate_rotation_2d(self, transform):
+        return 0
+
+    def marker_to_transform_data(self, points, rvec, tvec, idlist):
+        imgpts = self.projectPoints(points, rvec, tvec)
+        transform = self.getPerspectiveTransform(imgpts)
+        position2d = self.calculate_position_2d(transform)
+        rotation2d = self.calculate_rotation_2d(transform)
+
+        return self.toMarkerData(imgpts, idlist, transform, position2d, rotation2d)
