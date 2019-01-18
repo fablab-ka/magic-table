@@ -12,6 +12,7 @@ def rot_euler(v, xyz):
 
 
 # https: // stackoverflow.com/questions/23472048/projecting-3d-points-to-2d-plane
+# TODO get coordinates from table marker
 table_rvec = [-0.06196796, -2.93237183, -0.46390893]
 table_tvec = [-3.55630086, -3.30205484, 36.21805022]
 table_norm = rot_euler([0, 0, 1], table_rvec)
@@ -81,7 +82,7 @@ class FrameProcessor:
             float(np.dot(e_1, tvec[0] - np.array(table_tvec))),
             float(np.dot(e_2, tvec[0] - np.array(table_tvec)))
         )
-        print(position2d)
+        # print(position2d)
 
         # print(points)
         width, height = 800, 800
