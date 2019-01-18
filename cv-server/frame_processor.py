@@ -16,6 +16,7 @@ def rot_euler(v, xyz):
 table_rvec = [-0.06196796, -2.93237183, -0.46390893]
 table_tvec = [-3.55630086, -3.30205484, 36.21805022]
 table_norm = rot_euler([0, 0, 1], table_rvec)
+table_offset = [200, 200]
 e_1 = rot_euler([1, 0, 0], table_rvec)
 e_2 = rot_euler([0, 1, 0], table_rvec)
 
@@ -79,8 +80,10 @@ class FrameProcessor:
         )
 
         position2d = (
-            float(np.dot(e_1, tvec[0] - np.array(table_tvec))),
-            float(np.dot(e_2, tvec[0] - np.array(table_tvec)))
+            float(np.dot(e_1, tvec[0] -
+                         np.array(table_tvec))) + table_offset[0],
+            float(np.dot(e_2, tvec[0] -
+                         np.array(table_tvec))) + table_offset[1]
         )
         # print(position2d)
 
