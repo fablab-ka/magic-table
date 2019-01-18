@@ -103,7 +103,7 @@ export default class MainGame {
     this.turtle = new PIXI.Graphics();
     this.turtle.lineStyle(4, 0xff3300, 1);
     this.turtle.beginFill(0x66ccff);
-    this.turtle.drawStar(0, 0, 5, 20, 15);
+    this.turtle.drawRect(0, 0, 150, 150);
     this.turtle.endFill();
     this.turtle.x = 0;
     this.turtle.y = 0;
@@ -170,10 +170,10 @@ export default class MainGame {
                     new PIXI.Point(marker[3][0][0], marker[3][0][1]),
                 ]);*/
       } else if (ids[0] === MarkerMap.TurtleMarker) {
-        if (this.turtle) {
-          this.app.stage.addChild(this.turtle);
-          this.turtle.position.x = position2d[0];
-          this.turtle.position.y = position2d[1];
+        if (this.bunny) {
+          this.app.stage.addChild(this.bunny);
+          this.bunny.position.x = position2d[0] * 2;
+          this.bunny.position.y = position2d[1] * 2;
         }
       } else if (ids[0] === 0) {
         if (this.map) {
