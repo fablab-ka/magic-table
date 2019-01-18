@@ -18,6 +18,7 @@ table_tvec = [-3.55630086, -3.30205484, 36.21805022]
 table_norm = rot_euler([0, 0, 1], table_rvec)
 table_offset = [0, 0]
 table_scale = 1
+pixel_per_meter = 1
 e_1 = rot_euler([1, 0, 0], table_rvec)
 e_2 = rot_euler([0, 1, 0], table_rvec)
 

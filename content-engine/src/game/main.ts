@@ -5,12 +5,14 @@ import TiledMap from "../tiledmap/TiledMap";
 import TileLayer from "../tiledmap/TileLayer";
 import GameCommunication from "./communication";
 import { MarkerMessage } from "./game-types";
+import { MarkerMap } from "./marker-map";
 import { GameResourceManager, GameResources } from "./resource-manager";
 import { updateStatement } from "./state/actions";
 import store from "./state/store";
 import statements from "./statements";
 import TurtleController from "./turtle-controller";
-import { MarkerMap } from "./marker-map";
+
+const debugPanel = document.getElementById("debug-output");
 
 const TURTLE_HOST_NAME = "magicrobot.flka.space";
 
@@ -175,6 +177,25 @@ export default class MainGame {
           this.bunny.position.x = (position2d[0] + 10) * 50;
           this.bunny.position.y = (position2d[1] + 10) * 50;
           this.bunny.rotation = rotation2d;
+
+          if (debugPanel) {
+            debugPanel.innerHTML =
+              `<h3>Bunny</h3> <br/> ` +
+              `position ${position2d[0].toFixed(2)}:${position2d[1].toFixed(
+                2
+              )} <br/>` +
+              `rotation ${rotation2d.toFixed(2)} <br/>` +
+              `transform: <br/> ` +
+              ` ${transform[0][0].toFixed(2)} ${transform[0][1].toFixed(
+                2
+              )} ${transform[0][2].toFixed(2)} <br/>` +
+              ` ${transform[1][0].toFixed(2)} ${transform[1][1].toFixed(
+                2
+              )} ${transform[1][2].toFixed(2)} <br/>` +
+              ` ${transform[2][0].toFixed(2)} ${transform[2][1].toFixed(
+                2
+              )} ${transform[2][2].toFixed(2)} <br/>`;
+          }
         }
       } else if (ids[0] === 0) {
         if (this.map) {
