@@ -4,23 +4,30 @@ import numpy
 import cv2
 
 # initialize the list of reference points and counter with current position
-rectangles = []
+rectangle_tuples = []
 all_pts = []  # type: List[List[Tuple[int, int]] * 4]
 current_pt_nr = 0
 current_pts = []
+current_tuple = []
 # calib_step = 'idle'  # type: Union['idle', 'selecting', 'calibrating']
 
 homography = numpy.eye(3, 3)
 show_warped = False
 
-dinA4 = ((0, 0), (0, 210), (297, 210), (297, 0))
-
 
 def get_homography():
     global homography
+    srcPoints = []
+    dstPoints = []
+    for tuple in rectangle_tuples:
+        for p in tuple[0]:
+            srcPoints.append(p)
+        for p in tuple[1]:
+            dstPoints.append(p)
+
     homography, mask = cv2.findHomography(
-        srcPoints=numpy.array(rectangles[0]),
-        dstPoints=numpy.array(rectangles[1])
+        srcPoints=numpy.array(srcPoints),
+        dstPoints=numpy.array(dstPoints)
     )
     print("Transformation: ", homography)
 
@@ -43,23 +50,22 @@ def show_image(image):
 
 def click_and_store(event, x, y, flags, param):
     # grab references to the global variables
-    global all_pts, current_pt_nr, current_pts
+    global all_pts, current_pt_nr, current_pts, current_tuple
 
     if event == cv2.EVENT_LBUTTONDOWN:
-        if len(rectangles) >= 2:
-            return
-
         current_pt_nr += 1
         current_pts.append((x, y))
         all_pts.append((x, y))
         if current_pt_nr == 4:  # we're still selecting corners ...
             points = numpy.array(current_pts, dtype=numpy.int32)
             print("Points:", points)
-            rectangles.append(points)
+            current_tuple.append(points)
             current_pt_nr = 0
             current_pts = []
 
-            if len(rectangles) == 2:
+            if len(current_tuple) == 2:
+                rectangle_tuples.append(current_tuple)
+                current_tuple = []
                 get_homography()
 
         # cv2.imshow("image", image)
@@ -102,8 +108,9 @@ while True:
     for p in all_pts:
         cv2.circle(image, (p[0], p[1]), 2, (0, 0, 255), thickness=2)
 
-    for rect in rectangles:
-        cv2.polylines(image, [rect], isClosed=True, color=(255, 0, 0))
+    for tuple in rectangle_tuples:
+        cv2.polylines(image, [tuple[0]], isClosed=True, color=(255, 0, 0))
+        cv2.polylines(image, [tuple[1]], isClosed=True, color=(0, 255, 0))
 
     # display the image and wait for a keypress
     show_image(image)
@@ -112,7 +119,9 @@ while True:
     # if the 'r' key is pressed, reset the cropping region
     if key is 'r':
         all_pts = []
-        rectangles = []
+        current_pts = []
+        current_tuple = []
+        rectangle_tuples = []
 
     # toggle between warped and unwarped projection
     if key is 'w':

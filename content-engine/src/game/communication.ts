@@ -4,8 +4,8 @@ import { Store } from "redux";
 import { MarkerMessage } from "./game-types";
 import { updateMarkers } from "./state/actions";
 
-// const WEBSOCKET_URL = "ws://localhost:9000/";
-const WEBSOCKET_URL = "ws://magictable.flka.space:9000/";
+const WEBSOCKET_URL = "ws://localhost:9000/";
+// const WEBSOCKET_URL = "ws://magictable.flka.space:9000/";
 
 export default class GameCommunication {
   public onMarkerMessage: Signal<MarkerMessage>;
