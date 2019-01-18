@@ -104,5 +104,6 @@ class FrameProcessor:
             'marker': imgpts.tolist(),
             'ids': idlist.tolist(),
             'transform': transform.tolist(),
-            'position2d': position2d
+            'position2d': position2d,
+            'rotation2d': 0
         }
