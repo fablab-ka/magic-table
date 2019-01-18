@@ -10,6 +10,7 @@ import { updateStatement } from "./state/actions";
 import store from "./state/store";
 import statements from "./statements";
 import TurtleController from "./turtle-controller";
+import { MarkerMap } from "./marker-map";
 
 const TURTLE_HOST_NAME = "magicrobot.flka.space";
 
@@ -25,6 +26,7 @@ export default class MainGame {
 
   private bunny?: PIXI.Sprite;
   private rectangle?: PIXI.Graphics;
+  private turtle?: PIXI.Graphics;
   private points: PIXI.Graphics[] = [];
 
   private store: Store;
@@ -98,6 +100,15 @@ export default class MainGame {
     this.rectangle.y = 0;
     // this.app.stage.addChild(this.rectangle);
 
+    this.turtle = new PIXI.Graphics();
+    this.turtle.lineStyle(4, 0xff3300, 1);
+    this.turtle.beginFill(0x66ccff);
+    this.turtle.drawStar(0, 0, 5, 20, 15);
+    this.turtle.endFill();
+    this.turtle.x = 0;
+    this.turtle.y = 0;
+    this.app.stage.addChild(this.turtle);
+
     for (let i = 0; i < 4; i++) {
       this.points.push(new PIXI.Graphics());
       this.points[i].lineStyle(4, 0xff3300, 1);
@@ -113,7 +124,7 @@ export default class MainGame {
   private onMarkerMessage(message: MarkerMessage) {
     this.app.stage.removeChildren();
     for (const data of message) {
-      const { ids, marker, transform } = data;
+      const { ids, marker, transform, position2d } = data;
 
       const [a, b, c, d] = [
         transform[0][0],
@@ -158,6 +169,12 @@ export default class MainGame {
                     new PIXI.Point(marker[2][0][0], marker[2][0][1]),
                     new PIXI.Point(marker[3][0][0], marker[3][0][1]),
                 ]);*/
+      } else if (ids[0] === MarkerMap.TurtleMarker) {
+        if (this.turtle) {
+          this.app.stage.addChild(this.turtle);
+          this.turtle.position.x = position2d[0];
+          this.turtle.position.y = position2d[1];
+        }
       } else if (ids[0] === 0) {
         if (this.map) {
           this.app.stage.addChild(this.map);
