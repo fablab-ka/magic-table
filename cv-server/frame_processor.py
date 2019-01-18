@@ -109,5 +109,5 @@ class FrameProcessor:
             'ids': idlist.tolist(),
             'transform': transform.tolist(),
             'position2d': position2d,
-            'rotation2d': rvec[0]
+            'rotation2d': rvec[0][0]
         }
