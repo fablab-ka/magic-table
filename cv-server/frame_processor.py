@@ -81,10 +81,10 @@ class FrameProcessor:
         )
 
         position2d = (
-            float(np.dot(e_1, tvec[0] -
-                         np.array(table_tvec))) + table_offset[0] * table_scale,
-            float(np.dot(e_2, tvec[0] -
-                         np.array(table_tvec))) + table_offset[1] * table_scale
+            (float(np.dot(e_1, tvec[0] -
+                          np.array(table_tvec))) + table_offset[0]) * table_scale,
+            (float(np.dot(e_2, tvec[0] -
+                          np.array(table_tvec))) + table_offset[1]) * table_scale
         )
         # print(position2d)
 
@@ -109,5 +109,5 @@ class FrameProcessor:
             'ids': idlist.tolist(),
             'transform': transform.tolist(),
             'position2d': position2d,
-            'rotation2d': 0
+            'rotation2d': rvec[0]
         }

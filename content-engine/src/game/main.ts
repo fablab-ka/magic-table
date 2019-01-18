@@ -124,7 +124,7 @@ export default class MainGame {
   private onMarkerMessage(message: MarkerMessage) {
     this.app.stage.removeChildren();
     for (const data of message) {
-      const { ids, marker, transform, position2d } = data;
+      const { ids, marker, transform, position2d, rotation2d } = data;
 
       const [a, b, c, d] = [
         transform[0][0],
@@ -172,8 +172,9 @@ export default class MainGame {
       } else if (ids[0] === MarkerMap.TurtleMarker) {
         if (this.bunny) {
           this.app.stage.addChild(this.bunny);
-          this.bunny.position.x = position2d[0] * 2;
-          this.bunny.position.y = position2d[1] * 2;
+          this.bunny.position.x = (position2d[0] + 10) * 50;
+          this.bunny.position.y = (position2d[1] + 10) * 50;
+          this.bunny.rotation = rotation2d;
         }
       } else if (ids[0] === 0) {
         if (this.map) {
