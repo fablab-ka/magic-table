@@ -2,6 +2,7 @@ import { combineReducers } from "redux";
 import { ActionType, getType, StateType } from "typesafe-actions";
 
 import { StatementInstance } from "../../types";
+import statements from "../statements";
 import markersReducer from "./reducers/markers-reducer";
 import turtleReducer from "./reducers/turtle-reducer";
 
@@ -10,11 +11,17 @@ export const activeStatements = (
   action: GameAction
 ): StatementInstance[] => {
   switch (action.type) {
-    case getType(actions.updateStatement):
-      return [...state, action.payload];
-
-    case getType(actions.removeStatement):
-      return state.filter(statement => statement.id === action.payload.id);
+    case getType(actions.updateMarkers):
+      return action.payload
+        .filter(marker => !!statements[marker.ids[0]])
+        .map(marker => ({
+          id: marker.ids[0],
+          position: {
+            x: marker.transform[0][2], // TODO use position2d when available
+            y: marker.transform[1][2]
+          },
+          statement: statements[marker.ids[0]]
+        }));
 
     default:
       return state;

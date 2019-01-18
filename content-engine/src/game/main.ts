@@ -7,7 +7,6 @@ import GameCommunication from "./communication";
 import { MarkerMessage } from "./game-types";
 import { MarkerMap } from "./marker-map";
 import { GameResourceManager, GameResources } from "./resource-manager";
-import { updateStatement } from "./state/actions";
 import store from "./state/store";
 import statements from "./statements";
 import TurtleController from "./turtle-controller";
@@ -143,35 +142,7 @@ export default class MainGame {
         transform[1][2]
       );
 
-      const id = ids[0];
-      const statement = statements[id];
-
-      if (statement) {
-        this.store.dispatch(
-          updateStatement({
-            id,
-            position: {
-              x: transform[0][2],
-              y: transform[1][2]
-            },
-            statement
-          })
-        );
-
-        if (statement.sprite) {
-          this.app.stage.addChild(statement.sprite);
-          // (statement.sprite.transform as PIXI.TransformStatic).setFromMatrix(transformMatrix);
-        } else {
-          console.error("sprite not defined", ids[0]);
-        }
-        /*
-                sprite.proj.mapSprite(sprite, [
-                    new PIXI.Point(marker[0][0][0], marker[0][0][1]),
-                    new PIXI.Point(marker[1][0][0], marker[1][0][1]),
-                    new PIXI.Point(marker[2][0][0], marker[2][0][1]),
-                    new PIXI.Point(marker[3][0][0], marker[3][0][1]),
-                ]);*/
-      } else if (ids[0] === MarkerMap.TurtleMarker) {
+      if (ids[0] === MarkerMap.TurtleMarker) {
         if (this.bunny) {
           this.app.stage.addChild(this.bunny);
           this.bunny.position.x = (position2d[0] + 10) * 50;
