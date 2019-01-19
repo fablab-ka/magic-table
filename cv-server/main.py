@@ -11,10 +11,13 @@ from frame_processor import FrameProcessor
 clients = []
 server = None
 server_running = False
+
+
 def send_transforms(clients, transforms):
     message = json.dumps(transforms)
     for client in clients:
         client.sendMessage(message)
+
 
 def start_camera_analysis():
     print("Starting Camera Analysis")
@@ -34,7 +37,6 @@ def start_camera_analysis():
 
             send_transforms(cloned_clients, transforms)
 
-        # cv2.imshow('frame', frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             continue
 
@@ -59,7 +61,8 @@ def run_server():
 
     print("Starting Server")
 
-    server = SimpleWebSocketServer('', 9000, SimpleWebSocket, selectInterval=(1000.0 / 15) / 1000)
+    server = SimpleWebSocketServer(
+        '', 9000, SimpleWebSocket, selectInterval=(1000.0 / 15) / 1000)
 
     server_running = True
 

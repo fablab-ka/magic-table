@@ -1,16 +1,11 @@
-export interface MarkerMessageData {
-  ids: number[];
-  marker: number[][][];
-  transform: number[][];
-  position2d: number[];
-  rotation2d: number;
-}
+type Vector = [number, number];
 
-export type MarkerMessage = MarkerMessageData[];
+export type MarkerMessage = MarkerInfo[];
 
 export interface MarkerInfo {
   id: number;
-  position: [number, number];
+  corners: Vector[];
+  position: Vector;
+  direction: Vector;
   rotation: number;
-  transform: number[][];
 }

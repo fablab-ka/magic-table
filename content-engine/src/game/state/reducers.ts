@@ -13,14 +13,14 @@ export const activeStatements = (
   switch (action.type) {
     case getType(actions.updateMarkers):
       return action.payload
-        .filter(marker => !!statements[marker.ids[0]])
+        .filter(marker => !!statements[marker.id])
         .map(marker => ({
-          id: marker.ids[0],
+          id: marker.id,
           position: {
-            x: marker.transform[0][2], // TODO use position2d when available
-            y: marker.transform[1][2]
+            x: marker.corners[0][0], // TODO use position2d when available
+            y: marker.corners[0][1]
           },
-          statement: statements[marker.ids[0]]
+          statement: statements[marker.id]
         }));
 
     default:

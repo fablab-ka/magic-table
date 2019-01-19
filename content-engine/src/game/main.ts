@@ -125,77 +125,25 @@ export default class MainGame {
   private onMarkerMessage(message: MarkerMessage) {
     this.app.stage.removeChildren();
     for (const data of message) {
-      const { ids, marker, transform, position2d, rotation2d } = data;
+      const { id, corners, position, rotation } = data;
 
-      const [a, b, c, d] = [
-        transform[0][0],
-        transform[0][1],
-        transform[1][0],
-        transform[1][1]
-      ];
-      const transformMatrix = new PIXI.Matrix(
-        a,
-        c,
-        b,
-        d,
-        transform[0][2],
-        transform[1][2]
-      );
-
-      if (ids[0] === MarkerMap.TurtleMarker) {
+      if (id === MarkerMap.TurtleMarker) {
         if (this.bunny) {
           this.app.stage.addChild(this.bunny);
-          this.bunny.position.x = (position2d[0] + 10) * 50;
-          this.bunny.position.y = (position2d[1] + 10) * 50;
-          this.bunny.rotation = rotation2d;
-
-          if (debugPanel) {
-            debugPanel.innerHTML =
-              `<h3>Bunny</h3> <br/> ` +
-              `position ${position2d[0].toFixed(2)}:${position2d[1].toFixed(
-                2
-              )} <br/>` +
-              `rotation ${rotation2d.toFixed(2)} <br/>` +
-              `transform: <br/> ` +
-              ` ${transform[0][0].toFixed(2)} ${transform[0][1].toFixed(
-                2
-              )} ${transform[0][2].toFixed(2)} <br/>` +
-              ` ${transform[1][0].toFixed(2)} ${transform[1][1].toFixed(
-                2
-              )} ${transform[1][2].toFixed(2)} <br/>` +
-              ` ${transform[2][0].toFixed(2)} ${transform[2][1].toFixed(
-                2
-              )} ${transform[2][2].toFixed(2)} <br/>`;
-          }
-        }
-      } else if (ids[0] === 0) {
-        if (this.map) {
-          this.app.stage.addChild(this.map);
-        }
-      } else if (ids[0] === 53) {
-        if (this.rectangle) {
-          this.app.stage.addChild(this.rectangle);
-          (this.rectangle.transform as PIXI.TransformStatic).setFromMatrix(
-            transformMatrix
-          );
+          this.bunny.position.x = position[0];
+          this.bunny.position.y = position[1];
+          this.bunny.rotation = rotation + Math.PI / 2;
         }
         if (this.bunny) {
-          // this.app.stage.addChild(this.bunny);
-          // (this.bunny.transform as PIXI.TransformStatic).setFromMatrix(transformMatrix);
-          // this.bunny.position.x = transform[0][2];
-          // this.bunny.position.y = transform[1][2];
+          for (let i = 0; i < 4; i++) {
+            this.points[i].x = corners[i][0];
+            this.points[i].y = corners[i][1];
+            this.app.stage.addChild(this.points[i]);
+          }
         }
-        /* bunny.proj.mapSprite(bunny, [
-                        new PIXI.Point(marker[0][0][0], marker[0][0][1]),
-                        new PIXI.Point(marker[1][0][0], marker[1][0][1]),
-                        new PIXI.Point(marker[2][0][0], marker[2][0][1]),
-                        new PIXI.Point(marker[3][0][0], marker[3][0][1]),
-                    ]); */
-
-        for (let i = 0; i < 4; i++) {
-          this.points[i].x = marker[i][0][0];
-          this.points[i].y = marker[i][0][1];
-          this.app.stage.addChild(this.points[i]);
+      } else if (id === 0) {
+        if (this.map) {
+          this.app.stage.addChild(this.map);
         }
       }
     }
