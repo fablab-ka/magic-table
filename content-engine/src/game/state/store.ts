@@ -1,13 +1,12 @@
-import { createStore, Store } from 'redux';
+import { applyMiddleware, createStore, Store } from "redux";
+import logger from "redux-logger";
 
-import { gameReducer, GameState } from './reducers';
+import { gameReducer, GameState } from "./reducers";
 
 export function configureStore(initialState?: GameState): Store<GameState> {
-    const result = createStore(
-        gameReducer,
-    );
+  const result = createStore(gameReducer, applyMiddleware(logger));
 
-    return result;
+  return result;
 }
 
 const store = configureStore();

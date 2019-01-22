@@ -4,51 +4,51 @@ import { Command } from "../../interpreter/types";
 import { executeCodeCommand } from "../actions";
 import { GameAction } from "../reducers";
 
-export interface TurtleState {
-  position: {
+export interface TurtleTargetState {
+  targetPosition: {
     x: number;
     y: number;
   };
-  direction: number;
+  targetRotation: number;
 }
 
-const initialTurtleState = {
-  direction: 0,
-  position: { x: 0, y: 0 }
+const initialTurtleTargetState = {
+  targetPosition: { x: 0, y: 0 },
+  targetRotation: 0
 };
 
 export default (
-  state: TurtleState = initialTurtleState,
+  state: TurtleTargetState = initialTurtleTargetState,
   action: GameAction
-): TurtleState => {
+): TurtleTargetState => {
   switch (action.type) {
     case getType(executeCodeCommand):
-      let direction = state.direction;
-      let position = state.position;
+      let targetRotation = state.targetRotation;
+      let targetPosition = state.targetPosition;
 
       switch (action.payload) {
         case Command.Forward:
-          position = {
-            x: Math.round(position.x + Math.sin(direction)),
-            y: Math.round(position.y + Math.cos(direction))
+          targetPosition = {
+            x: Math.round(targetPosition.x + Math.sin(targetRotation)),
+            y: Math.round(targetPosition.y + Math.cos(targetRotation))
           };
           break;
         case Command.Left:
-          direction -= Math.PI / 2;
+          targetRotation -= Math.PI / 2;
           break;
         case Command.Right:
-          direction += Math.PI / 2;
+          targetRotation += Math.PI / 2;
           break;
       }
 
-      direction = (direction + Math.PI) % (Math.PI * 2);
-      if (direction < 0) {
-        direction += Math.PI;
+      targetRotation = (targetRotation + Math.PI) % (Math.PI * 2);
+      if (targetRotation < 0) {
+        targetRotation += Math.PI;
       }
-      direction -= Math.PI;
+      targetRotation -= Math.PI;
       return {
-        direction,
-        position
+        targetPosition,
+        targetRotation
       };
 
     default:

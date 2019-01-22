@@ -1,15 +1,18 @@
 import { Store } from "redux";
 import {
+  getTurtleMarkerDirection,
   getTurtleMarkerPosition,
   getTurtleMarkerRotation,
-  getTurtlePosition
+  getTurtleTargetPosition,
+  getTurtleTargetRotation
 } from "./state/selectors";
 
 import { Vector } from "./game-types";
 
-const MOVEMENT_VELOCITY = 255;
+const MOVEMENT_VELOCITY = 2;
 const MIN_DISTANCE_TO_TARGET = 20;
 const MIN_ROTATION_DELTA = 5;
+const CONNECTION_TIMEOUT_INTERVAL = 5000;
 
 enum TurtleDirection {
   Stop = "0",
@@ -22,43 +25,58 @@ enum TurtleDirection {
 export default class TurtleController {
   private store: Store;
   private connection?: WebSocket;
-  private turtleHostname: string;
+  private turtleURL: string;
+  private turtleProtocols = ["arduino"];
 
   constructor(store: Store, turtleHostname: string) {
     this.store = store;
-    this.turtleHostname = turtleHostname;
+    this.turtleURL = `ws://${turtleHostname}:81/`;
 
     store.subscribe(this.onStateChange.bind(this));
   }
 
   public connect() {
-    this.connection = new WebSocket(`ws://${this.turtleHostname}:81/`, [
-      "arduino"
-    ]);
-    this.connection.onopen = () => {
-      if (this.connection) {
-        this.connection.send("Connect " + new Date());
-      }
-    };
-    this.connection.onerror = error => {
-      console.log("WebSocket Error ", error);
-    };
-    this.connection.onmessage = e => {
-      console.log("Server: ", e.data);
-    };
-    this.connection.onclose = () => {
-      console.log("WebSocket connection closed");
-    };
+    console.log("[TurtleController] trying to connect");
+
+    this.connection = new WebSocket(this.turtleURL, this.turtleProtocols);
+    this.connection.onopen = this.onConnectionOpen.bind(this);
+    this.connection.onerror = this.onConnectionError.bind(this);
+    this.connection.onmessage = this.onConnectionMessage.bind(this);
+    this.connection.onclose = this.onConnectionClose.bind(this);
+  }
+
+  private onConnectionOpen() {
+    if (this.connection) {
+      this.connection.send("Connect " + new Date());
+    }
+  }
+
+  private onConnectionError(error: Event) {
+    console.log("WebSocket Error ", error);
+  }
+
+  private onConnectionMessage(e: MessageEvent) {
+    console.log("Server: ", e.data);
+  }
+
+  private onConnectionClose() {
+    console.log("WebSocket connection closed");
+
+    setTimeout(() => {
+      this.connect();
+    }, CONNECTION_TIMEOUT_INTERVAL);
   }
 
   private onStateChange() {
-    if (!this.connection) {
+    const connectionIsOpen =
+      this.connection && this.connection.readyState !== this.connection.OPEN;
+    if (!this.connection || connectionIsOpen) {
       return;
     }
 
     const state = this.store.getState();
-    const targetPosition = { x: 700, y: 500 }; //getTurtlePosition(state);
-    const targetRotation = 45; //getTurtleRotation(state);
+    const targetPosition = { x: 500, y: 500 }; // getTurtleTargetPosition(state);
+    const targetRotation = 0; // getTurtleTargetRotation(state);
     const currentRotation = getTurtleMarkerRotation(state);
     const currentPosition = getTurtleMarkerPosition(state);
     const currentDirection = getTurtleMarkerDirection(state);
@@ -66,6 +84,7 @@ export default class TurtleController {
     if (
       typeof currentPosition !== "undefined" &&
       typeof currentRotation !== "undefined" &&
+      typeof currentDirection !== "undefined" &&
       typeof targetPosition !== "undefined"
     ) {
       const movementVector: Vector = [
@@ -104,7 +123,18 @@ export default class TurtleController {
   }
 
   private getAngleBetween(v1: Vector, v2: Vector) {
-    return 0; // TODO
+    let result = Math.atan2(v2[1], v2[0]) - Math.atan2(v1[1], v1[0]);
+    if (result > Math.PI) {
+      result -= 2 * Math.PI;
+    } else if (result <= -Math.PI) {
+      result += 2 * Math.PI;
+    }
+
+    return result;
+  }
+
+  private dotProduct(v1: Vector, v2: Vector) {
+    return v1[0] * v2[0] + v1[1] * v2[1];
   }
 
   private rotateToAngle(angle: number) {
@@ -117,9 +147,8 @@ export default class TurtleController {
 
   private sendMovement(direction: TurtleDirection, amount: number) {
     if (this.connection) {
-      const velocity = MOVEMENT_VELOCITY.toString(8);
-      const amountText = amount.toString(8);
-      const commandstr = `#${direction}${velocity}#${amountText}`;
+      const amountText = amount.toString(16);
+      const commandstr = `#${direction}${MOVEMENT_VELOCITY}#${amountText}`;
       console.log(`Sending movement command: ${commandstr}`);
       this.connection.send(commandstr);
     }

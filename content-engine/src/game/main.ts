@@ -4,6 +4,7 @@ import { backgroundColor } from "../constants";
 import TiledMap from "../tiledmap/TiledMap";
 import TileLayer from "../tiledmap/TileLayer";
 import GameCommunication from "./communication";
+import GameController from "./game-controller";
 import { MarkerMessage } from "./game-types";
 import { MarkerMap } from "./marker-map";
 import { GameResourceManager, GameResources } from "./resource-manager";
@@ -33,6 +34,7 @@ export default class MainGame {
   private store: Store;
 
   private turtleController: TurtleController;
+  private gameController: GameController;
 
   constructor() {
     this.store = store;
@@ -57,6 +59,7 @@ export default class MainGame {
          window.setTimeout(() => app.renderer.resize(window.innerWidth, window.innerHeight), 1000);*/
 
     this.turtleController = new TurtleController(this.store, TURTLE_HOST_NAME);
+    this.gameController = new GameController(this.store);
   }
 
   public start() {
@@ -65,6 +68,7 @@ export default class MainGame {
     this.resourceManager.load();
 
     this.turtleController.connect();
+    this.gameController.start();
   }
 
   private onResourcesReady({ map, spriteSheet, resources }: GameResources) {

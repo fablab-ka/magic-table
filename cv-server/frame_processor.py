@@ -12,7 +12,7 @@ pixel_per_meter = 100/0.102
 
 class FrameProcessor:
     def __init__(self, calibration):
-        self.camera_index = 0
+        self.camera_index = 2
         self.marker_length_in_meter = 0.04
         self.projector_to_camera_offset = np.array([0, 0, 0])
 
