@@ -1,7 +1,7 @@
 import { getType } from "typesafe-actions";
 
 import { Command } from "../../interpreter/types";
-import { executeCodeCommand } from "../actions";
+import { executeCodeCommand, updateMarkers } from "../actions";
 import { GameAction } from "../reducers";
 
 export interface TurtleTargetState {
@@ -22,6 +22,20 @@ export default (
   action: GameAction
 ): TurtleTargetState => {
   switch (action.type) {
+    case getType(updateMarkers):
+      const targetMarker = action.payload.find(marker => marker.id === 52);
+      if (targetMarker) {
+        return {
+          targetPosition: {
+            x: targetMarker.position[0],
+            y: targetMarker.position[1]
+          },
+          targetRotation: targetMarker.rotation
+        };
+      } else {
+        return state;
+      }
+
     case getType(executeCodeCommand):
       let targetRotation = state.targetRotation;
       let targetPosition = state.targetPosition;

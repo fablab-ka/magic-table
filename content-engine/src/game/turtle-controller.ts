@@ -10,8 +10,9 @@ import {
 import { Vector } from "./game-types";
 
 const MOVEMENT_VELOCITY = 2;
+const ROTATION_VELOCITY = 0;
 const MIN_DISTANCE_TO_TARGET = 20;
-const MIN_ROTATION_DELTA = 5;
+const MIN_ROTATION_DELTA = 10;
 const CONNECTION_TIMEOUT_INTERVAL = 5000;
 
 enum TurtleDirection {
@@ -75,8 +76,8 @@ export default class TurtleController {
     }
 
     const state = this.store.getState();
-    const targetPosition = { x: 500, y: 500 }; // getTurtleTargetPosition(state);
-    const targetRotation = 0; // getTurtleTargetRotation(state);
+    const targetPosition = getTurtleTargetPosition(state);
+    const targetRotation = getTurtleTargetRotation(state);
     const currentRotation = getTurtleMarkerRotation(state);
     const currentPosition = getTurtleMarkerPosition(state);
     const currentDirection = getTurtleMarkerDirection(state);
@@ -104,7 +105,11 @@ export default class TurtleController {
           this.rotateToAngle(rotationDelta);
         } else {
           // move to target
-          this.sendMovement(TurtleDirection.Forward, distance);
+          this.sendMovement(
+            TurtleDirection.Forward,
+            distance,
+            MOVEMENT_VELOCITY
+          );
         }
       } else {
         // TODo rotate to taretrotation
@@ -130,25 +135,33 @@ export default class TurtleController {
       result += 2 * Math.PI;
     }
 
-    return result;
-  }
-
-  private dotProduct(v1: Vector, v2: Vector) {
-    return v1[0] * v2[0] + v1[1] * v2[1];
+    return (result / Math.PI) * 180;
   }
 
   private rotateToAngle(angle: number) {
     if (angle > 0) {
-      this.sendMovement(TurtleDirection.RotateLeft, angle);
+      this.sendMovement(
+        TurtleDirection.RotateLeft,
+        ((Math.abs(angle) * 0.5) / 360) * 255,
+        ROTATION_VELOCITY
+      );
     } else {
-      this.sendMovement(TurtleDirection.RotateRight, angle);
+      this.sendMovement(
+        TurtleDirection.RotateRight,
+        ((Math.abs(angle) * 0.6) / 360) * 255,
+        ROTATION_VELOCITY
+      );
     }
   }
 
-  private sendMovement(direction: TurtleDirection, amount: number) {
+  private sendMovement(
+    direction: TurtleDirection,
+    amount: number,
+    velocity: number
+  ) {
     if (this.connection) {
-      const amountText = amount.toString(16);
-      const commandstr = `#${direction}${MOVEMENT_VELOCITY}#${amountText}`;
+      const amountText = Math.round(amount).toString(16);
+      const commandstr = `#${direction}${velocity}#${amountText}`;
       console.log(`Sending movement command: ${commandstr}`);
       this.connection.send(commandstr);
     }

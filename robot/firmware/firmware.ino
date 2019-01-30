@@ -328,6 +328,9 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t lenght)
         Serial.print(" ");
         Serial.println(amount);
 
+        M1.setmotor(_CCW, 50);
+        M2.setmotor(_CW, 50);
+        delay(10);
         M1.setmotor(_CCW, pwmPerVelocity[velocity]);
         M2.setmotor(_CW, pwmPerVelocity[velocity]);
         motorStopTime = millis() + getRotationTime(velocity, amount);
@@ -339,6 +342,9 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t lenght)
         Serial.print(" ");
         Serial.println(amount);
 
+        M1.setmotor(_CW, 50);
+        M2.setmotor(_CCW, 50);
+        delay(10);
         M1.setmotor(_CW, pwmPerVelocity[velocity]);
         M2.setmotor(_CCW, pwmPerVelocity[velocity]);
         motorStopTime = millis() + getRotationTime(velocity, amount);
@@ -350,6 +356,9 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t lenght)
         Serial.print(" ");
         Serial.println(amount);
 
+        M1.setmotor(_CW, 50);
+        M2.setmotor(_CW, 50);
+        delay(10);
         M1.setmotor(_CW, pwmPerVelocity[velocity]);
         M2.setmotor(_CW, pwmPerVelocity[velocity]);
         motorStopTime = millis() + getMovementTime(velocity, amount);
@@ -361,6 +370,9 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t lenght)
         Serial.print(" ");
         Serial.println(amount);
 
+        M1.setmotor(_CCW, 50);
+        M2.setmotor(_CCW, 50);
+        delay(10);
         M1.setmotor(_CCW, pwmPerVelocity[velocity]);
         M2.setmotor(_CCW, pwmPerVelocity[velocity]);
         motorStopTime = millis() + getMovementTime(velocity, amount);
