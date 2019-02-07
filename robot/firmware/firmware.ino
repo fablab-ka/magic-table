@@ -35,25 +35,36 @@ Motor M2(0x30, _MOTOR_B, 1000); //Motor B
 // 10 / 17.1cm -> 0.58 rotations for 10cm
 // wheels are 10cm apart -> 31.41cm robot rotation circumference
 // -> 29.217 / 17.1 = 1.65 wheel rotations for a full robot rotation
-float rotationsPerSecond[] = {1.04,
-                              2.775,
-                              5.96};
-float wheelRotationsForFullTurn[] = {2, 1.7, 1.65};
-float secondsPerFullTurn[] = {
+const float rotationsPerSecond[] = {1.04,
+                                    2.775,
+                                    5.96};
+const float wheelRotationsForFullTurn[] = {2, 1.7, 1.65};
+const float secondsPerFullTurn[] = {
     wheelRotationsForFullTurn[0] / rotationsPerSecond[0],
     wheelRotationsForFullTurn[1] / rotationsPerSecond[1],
     wheelRotationsForFullTurn[2] / rotationsPerSecond[2]};
-float wheelRotationsForTenCentimenters[] = {1, 0.8, 1};
-float secondsPerTenCentimenters[] = {
+const float wheelRotationsForTenCentimenters[] = {1, 0.8, 1};
+const float secondsPerTenCentimenters[] = {
     wheelRotationsForTenCentimenters[0] / rotationsPerSecond[0],
     wheelRotationsForTenCentimenters[1] / rotationsPerSecond[1],
     wheelRotationsForTenCentimenters[2] / rotationsPerSecond[2]};
-int pwmPerVelocity[] = {
+int const pwmPerVelocity[] = {
     15,
     40,
     255};
 
+const int16_t MIN_DISTANCE_TO_TARGET = 20;
+const int16_t MIN_ROTATION_DELTA = 10;
+const int16_t MAX_DISTANCE_PER_TICK = 10;
+const int16_t MAX_ROTATION_PER_TICK = 10;
+
 int motorStopTime = -1;
+int16_t currentDirectionX = 0;
+int16_t currentDirectionY = 1;
+int16_t targetPositionX = 0;
+int16_t targetPositionY = 0;
+int16_t targetRotation = 0;
+bool isMoving = false;
 
 void setup()
 {
@@ -98,6 +109,124 @@ void loop()
     delay(100);
     M2.setmotor(_STOP);
     M1.setmotor(_STOP);
+  }
+
+  if (abs(targetPositionX) > 0 || abs(targetPositionY) > 0 || abs(targetRotation) > 0)
+  {
+    isMoving = true;
+
+    moveTo(targetPositionX, targetPositionY, targetRotation)
+  }
+  else if (isMoving)
+  {
+    isMoving = false;
+
+    M2.setmotor(_SHORT_BRAKE);
+    M1.setmotor(_SHORT_BRAKE);
+    delay(100);
+    M2.setmotor(_STOP);
+    M1.setmotor(_STOP);
+  }
+}
+
+void rotateToAngle(int16_t angle)
+{
+  // TODO better ramp up
+  int amount = abs(angle) / 360 * 255;
+  if (angle > 0)
+  {
+    M1.setmotor(_CW, 50);
+    M2.setmotor(_CCW, 50);
+    delay(10);
+    M1.setmotor(_CW, pwmPerVelocity[0]);
+    M2.setmotor(_CCW, pwmPerVelocity[0]);
+    motorStopTime = millis() + getRotationTime(0, amount);
+  }
+  else
+  {
+    M1.setmotor(_CCW, 50);
+    M2.setmotor(_CW, 50);
+    delay(10);
+    M1.setmotor(_CCW, pwmPerVelocity[0]);
+    M2.setmotor(_CW, pwmPerVelocity[0]);
+    motorStopTime = millis() + getRotationTime(0, amount);
+  }
+
+  float radAngle = angle / 360.0 * PI;
+  currentDirectionX = currentDirectionX * cos(radAngle) - currentDirectionY * sin(radAngle);
+  currentDirectionY = currentDirectionX * sin(radAngle) - currentDirectionY * cos(radAngle);
+}
+
+void driveForward(float distance)
+{
+  // TODO better ramp up
+  M1.setmotor(_CW, 50);
+  M2.setmotor(_CW, 50);
+  delay(10);
+  M1.setmotor(_CW, pwmPerVelocity[0]);
+  M2.setmotor(_CW, pwmPerVelocity[0]);
+  motorStopTime = millis() + getMovementTime(0, amount);
+
+  float currentDirectionVectorLength = getVectorLength(currentDirectionX, currentDirectionY);
+  float normDirX = currentDirectionX / currentDirectionVectorLength;
+  float normDirY = currentDirectionY / currentDirectionVectorLength;
+
+  currentDirectionX += normDirX * distance;
+  currentDirectionY += normDirY * distance;
+}
+
+int16_t getAngleBetween(v1x, v1y, v2x, v2y)
+{
+  int16_t result = atan2(v2y, v2x) - atan2(v1y, v1x);
+  if (result > PI)
+  {
+    result -= 2 * PI;
+  }
+  else if (result <= -PI)
+  {
+    result += 2 * PI;
+  }
+
+  return (result / PI) * 180;
+}
+
+float getVectorLength(int16_t x, int16_t y)
+{
+  return sqrt(x * x + y * y);
+}
+
+void moveTo(int16_t movementVectorX, int16_t movementVectorY, int16_t angle)
+{
+  float distance = getVectorLength(x, y);
+
+  if (distance > MIN_DISTANCE_TO_TARGET)
+  {
+    const rotationDelta = getAngleBetween(
+        movementVectorX, movementVectorY,
+        currentDirectionX, currentDirectionY);
+    if (abs(rotationDelta) > MIN_ROTATION_DELTA)
+    {
+      // look at target
+      rotateToAngle(rotationDelta % MAX_ROTATION_PER_TICK);
+    }
+    else
+    {
+      // move to target
+      driveForward(distance % MAX_DISTANCE_PER_TICK);
+    }
+  }
+  else
+  {
+    const rotationDelta = targetRotation - currentRotation;
+    if (abs(rotationDelta) > MIN_ROTATION_DELTA)
+    {
+      // rotate to targetrotation
+      rotateToAngle(rotationDelta % MAX_ROTATION_PER_TICK);
+    }
+    else
+    {
+      // Turtle arrived at destination
+    }
   }
 }
 
@@ -301,7 +430,19 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t lenght)
   break;
   case WStype_TEXT: // if new text data is received
     Serial.printf("[%u] get Text: %s\n", num, payload);
-    if (payload[0] == '#')
+    if (payload[0] == '>')
+    {
+      targetPositionX = (int16_t)strtol((const char *)&payload[1], NULL, 16);
+      targetPositionY = (int16_t)strtol((const char *)&payload[2], NULL, 16);
+      targetRotation = (int16_t)strtol((const char *)&payload[3], NULL, 16);
+      Serial.print("go to ");
+      Serial.print(targetPositionX);
+      Serial.print(":");
+      Serial.print(targetPositionY);
+      Serial.print(":");
+      Serial.println(targetRotation);
+    }
+    else if (payload[0] == '#')
     { // we get a move command
       const char dir = payload[1];
       uint8_t velocity = (uint8_t)strtol((const char *)&payload[2], NULL, 8);
