@@ -59,8 +59,6 @@ const int16_t MAX_DISTANCE_PER_TICK = 10;
 const int16_t MAX_ROTATION_PER_TICK = 10;
 
 int motorStopTime = -1;
-int16_t currentDirectionX = 0;
-int16_t currentDirectionY = 1;
 int16_t targetPositionX = 0;
 int16_t targetPositionY = 0;
 int16_t targetRotation = 0;
@@ -115,7 +113,7 @@ void loop()
   {
     isMoving = true;
 
-    moveTo(targetPositionX, targetPositionY, targetRotation)
+    moveToTarget()
   }
   else if (isMoving)
   {
@@ -152,9 +150,9 @@ void rotateToAngle(int16_t angle)
     motorStopTime = millis() + getRotationTime(0, amount);
   }
 
-  float radAngle = angle / 360.0 * PI;
-  currentDirectionX = currentDirectionX * cos(radAngle) - currentDirectionY * sin(radAngle);
-  currentDirectionY = currentDirectionX * sin(radAngle) - currentDirectionY * cos(radAngle);
+  float radAngle = -angle / 360.0 * PI;
+  targetPositionX = targetPositionX * cos(radAngle) - targetPositionY * sin(radAngle);
+  targetPositionY = targetPositionX * sin(radAngle) - targetPositionY * cos(radAngle);
 }
 
 void driveForward(float distance)
@@ -167,17 +165,12 @@ void driveForward(float distance)
   M2.setmotor(_CW, pwmPerVelocity[0]);
   motorStopTime = millis() + getMovementTime(0, amount);
 
-  float currentDirectionVectorLength = getVectorLength(currentDirectionX, currentDirectionY);
-  float normDirX = currentDirectionX / currentDirectionVectorLength;
-  float normDirY = currentDirectionY / currentDirectionVectorLength;
-
-  currentDirectionX += normDirX * distance;
-  currentDirectionY += normDirY * distance;
+  targetPositionY -= distance;
 }
 
-int16_t getAngleBetween(v1x, v1y, v2x, v2y)
+int16_t getAngleToTargetVector()
 {
-  int16_t result = atan2(v2y, v2x) - atan2(v1y, v1x);
+  int16_t result = atan2(1, 0) - atan2(targetPositionY, targetPositionX);
   if (result > PI)
   {
     result -= 2 * PI;
@@ -190,20 +183,18 @@ int16_t getAngleBetween(v1x, v1y, v2x, v2y)
   return (result / PI) * 180;
 }
 
-float getVectorLength(int16_t x, int16_t y)
+float getTargetVectorLength()
 {
-  return sqrt(x * x + y * y);
+  return sqrt(targetPositionX * targetPositionX + targetPositionY * targetPositionY);
 }
 
-void moveTo(int16_t movementVectorX, int16_t movementVectorY, int16_t angle)
+void moveToTarget()
 {
-  float distance = getVectorLength(x, y);
+  float distance = getTargetVectorLength();
 
   if (distance > MIN_DISTANCE_TO_TARGET)
   {
-    const rotationDelta = getAngleBetween(
-        movementVectorX, movementVectorY,
-        currentDirectionX, currentDirectionY);
+    const rotationDelta = getAngleToTargetVector();
     if (abs(rotationDelta) > MIN_ROTATION_DELTA)
     {
       // look at target
@@ -221,7 +212,7 @@ void moveTo(int16_t movementVectorX, int16_t movementVectorY, int16_t angle)
     if (abs(rotationDelta) > MIN_ROTATION_DELTA)
     {
       // rotate to targetrotation
-      rotateToAngle(rotationDelta % MAX_ROTATION_PER_TICK);
+      rotateToAngle(targetRotation % MAX_ROTATION_PER_TICK);
     }
     else
     {
