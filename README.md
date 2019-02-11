@@ -1,4 +1,5 @@
 # Magic Table
+detail description: http://wiki.fablab-karlsruhe.de/doku.php?id=projekte:2018:magictable&s[]=magic&s[]=table
 
 ## Requirements
 
@@ -32,3 +33,5 @@ Electronics:
 * 2 x 300rpm geared 3V DC motor (D-shaft)
 * 2 x rubber O-ring
 * Ball Coaster
+* 2 LEDs
+* Lasercut & 3D Printed Parts (see part files in robot/hardware/mkI)
