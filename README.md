@@ -21,3 +21,14 @@ To start the content engine run:
 yarn start
 ```
 inside the `src/content-engine` folder
+
+## Robot Hardware
+
+Electronics:
+* Wemos D1 Mini
+* Wemos Motor Shield
+* Wemos Battery Shield
+* LiPo Battery
+* 2 x 300rpm geared 3V DC motor (D-shaft)
+* 2 x rubber O-ring
+* Ball Coaster
