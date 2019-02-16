@@ -113,7 +113,7 @@ void loop()
   {
     isMoving = true;
 
-    moveToTarget()
+    moveToTarget();
   }
   else if (isMoving)
   {
@@ -163,7 +163,7 @@ void driveForward(float distance)
   delay(10);
   M1.setmotor(_CW, pwmPerVelocity[0]);
   M2.setmotor(_CW, pwmPerVelocity[0]);
-  motorStopTime = millis() + getMovementTime(0, amount);
+  motorStopTime = millis() + getMovementTime(0, distance);
 
   targetPositionY -= distance;
 }
@@ -194,7 +194,7 @@ void moveToTarget()
 
   if (distance > MIN_DISTANCE_TO_TARGET)
   {
-    const rotationDelta = getAngleToTargetVector();
+    int16_t rotationDelta = getAngleToTargetVector();
     if (abs(rotationDelta) > MIN_ROTATION_DELTA)
     {
       // look at target
@@ -208,7 +208,7 @@ void moveToTarget()
   }
   else
   {
-    const rotationDelta = targetRotation - currentRotation;
+    int16_t rotationDelta = targetRotation - currentRotation;
     if (abs(rotationDelta) > MIN_ROTATION_DELTA)
     {
       // rotate to targetrotation
