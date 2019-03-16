@@ -7,6 +7,8 @@
 #include <WebSocketsServer.h>
 #include "WEMOS_Motor.h"
 
+#define DEBUG
+
 ESP8266WiFiMulti wifiMulti;
 
 ESP8266WebServer server(80);
@@ -14,13 +16,13 @@ WebSocketsServer webSocket(81);
 
 File fsUploadFile;
 
-const char *ssid = "Magic Robot 1";
+const char *ssid = "Magic Robot 3";
 const char *password = "foobar42";
 
-const char *OTAName = "magicrobot"; // A name and a password for the OTA service
+const char *OTAName = "magicrobot3"; // A name and a password for the OTA service
 const char *OTAPassword = "magic";
 
-const char *mdnsName = "magicrobot";
+const char *mdnsName = "magicrobot3";
 
 const int LED_POWER = D3;
 const int LED_CONNECTION = D4;
@@ -51,18 +53,32 @@ float secondsPerTenCentimenters[] = {
 int pwmPerVelocity[] = {
     15,
     40,
-    255};
+    200};
+int COMMAND_PWM = 40;
 
-int16_t MIN_DISTANCE_TO_TARGET = 20;
-int16_t MIN_ROTATION_DELTA = 10;
-int16_t MAX_DISTANCE_PER_TICK = 10;
-int16_t MAX_ROTATION_PER_TICK = 10;
+float angularVelocity = 0;
+float linearVelocity = 0;
+
+float MIN_DISTANCE_TO_TARGET = 20;
+float MIN_ROTATION_DELTA = 15;
+float MICROSECONDS_PER_MM_FORWARD = 1000;
+float MICROSECONDS_PER_DEGREE_ROTATING = 800;
+float ANGULAR_ELLIPSIS = 0.05;
+float LINEAR_ELLIPSIS = 0.05;
+float ANGULAR_RAMP_UP_STEP = 0.00001;
+float LINEAR_RAMP_UP_STEP = 0.00001;
+float MIN_PWM = 15;
+
 
 unsigned long motorStopTime = -1;
-int16_t targetPositionX = 0;
-int16_t targetPositionY = 0;
-int16_t targetRotation = 0;
-bool isMoving = false;
+float targetPositionX = 0;
+float targetPositionY = 0;
+float targetRotation = 0;
+float didRotateToDirectionLastTick = false;
+float didRotateToTargetLastTick = false;
+float didDriveForwardLastTick = false;
+
+unsigned long lastMovementTime = 0;
 
 unsigned long getMovementTime(int velocity, int distance)
 {
@@ -76,50 +92,129 @@ unsigned long getRotationTime(int velocity, int rotationAmount)
   return secondsPerFullTurn[velocity] * rotationFactor * 1000;
 }
 
-void rotateToAngle(int16_t angle)
+void setClockwiseMotorRotation(float velocity) {
+  M1.setmotor(_CCW, velocity * (COMMAND_PWM - MIN_PWM) + MIN_PWM);
+  M2.setmotor(_CW, velocity * (COMMAND_PWM - MIN_PWM) + MIN_PWM);
+}
+
+void setCounterClockwiseMotorRotation(float velocity) {
+  M1.setmotor(_CW, -velocity * (COMMAND_PWM - MIN_PWM) + MIN_PWM);
+  M2.setmotor(_CCW, -velocity * (COMMAND_PWM - MIN_PWM) + MIN_PWM);
+}
+
+void setMotorForward(float velocity) {
+  M1.setmotor(_CCW, -velocity * (COMMAND_PWM - MIN_PWM) + MIN_PWM);
+  M2.setmotor(_CCW, -velocity * (COMMAND_PWM - MIN_PWM) + MIN_PWM);
+}
+
+bool rotateToAngle(float dt, float angle)
 {
-  // TODO better ramp up
-  int amount = abs(angle) / 360 * 255;
-  if (angle > 0)
+  bool didRotate = false;
+
+  #ifdef DEBUG
+  char buffer [40];
+  sprintf(buffer, "rotate to angle\n angle=%f", angle);
+  webSocket.broadcastTXT(buffer);
+  #endif
+
+  int amount = fabs(angle) / 360 * 255;
+  /*if (linearVelocity > LINEAR_ELLIPSIS) {
+    #ifdef DEBUG
+    webSocket.broadcastTXT("breaking linear velocity");
+    #endif
+
+    setMotorForward(linearVelocity);
+
+    linearVelocity -= LINEAR_RAMP_UP_STEP * dt;
+    if (linearVelocity < 0) { linearVelocity = 0; }
+  }
+  else */if (angle > 0)
   {
-    M1.setmotor(_CW, 50);
-    M2.setmotor(_CCW, 50);
-    delay(10);
-    M1.setmotor(_CW, pwmPerVelocity[0]);
-    M2.setmotor(_CCW, pwmPerVelocity[0]);
-    motorStopTime = millis() + getRotationTime(0, amount);
+    /*if (angularVelocity < -ANGULAR_ELLIPSIS) {
+      #ifdef DEBUG
+      webSocket.broadcastTXT("breaking angular left rotation");
+      #endif
+
+      setCounterClockwiseMotorRotation(angularVelocity);
+    } else */{
+      #ifdef DEBUG
+      webSocket.broadcastTXT("rotating right");
+      #endif
+
+      setClockwiseMotorRotation(angularVelocity);
+    }
+
+    angularVelocity += ANGULAR_RAMP_UP_STEP * dt;
+    if (angularVelocity > 1) { angularVelocity = 1; }
+
+    didRotate = true;
   }
   else
   {
-    M1.setmotor(_CCW, 50);
-    M2.setmotor(_CW, 50);
-    delay(10);
-    M1.setmotor(_CCW, pwmPerVelocity[0]);
-    M2.setmotor(_CW, pwmPerVelocity[0]);
-    motorStopTime = millis() + getRotationTime(0, amount);
+    /*if (angularVelocity > ANGULAR_ELLIPSIS) {
+      #ifdef DEBUG
+      webSocket.broadcastTXT("breaking angular right rotation");
+      #endif
+
+      setClockwiseMotorRotation(angularVelocity);
+    } else */{
+      #ifdef DEBUG
+      webSocket.broadcastTXT("rotating left");
+      #endif
+
+      setCounterClockwiseMotorRotation(angularVelocity);
+    }
+
+    angularVelocity -= ANGULAR_RAMP_UP_STEP * dt;
+    if (angularVelocity < -1) { angularVelocity = -1; }
+
+    didRotate = true;
   }
 
-  float radAngle = -angle / 360.0 * PI;
-  targetPositionX = targetPositionX * cos(radAngle) - targetPositionY * sin(radAngle);
-  targetPositionY = targetPositionX * sin(radAngle) - targetPositionY * cos(radAngle);
+  return didRotate;
 }
 
-void driveForward(float distance)
+bool driveForward(float dt)
 {
-  // TODO better ramp up
-  M1.setmotor(_CW, 50);
-  M2.setmotor(_CW, 50);
-  delay(10);
-  M1.setmotor(_CW, pwmPerVelocity[0]);
-  M2.setmotor(_CW, pwmPerVelocity[0]);
-  motorStopTime = millis() + getMovementTime(0, distance);
+  bool didDriveForward = false;
 
-  targetPositionY -= distance;
+  #ifdef DEBUG
+  webSocket.broadcastTXT("drive forward");
+  #endif
+
+  /*if (angularVelocity > ANGULAR_ELLIPSIS) {
+    #ifdef DEBUG
+    webSocket.broadcastTXT("breaking right rotation");
+    #endif
+
+    setClockwiseMotorRotation(angularVelocity);
+
+    angularVelocity -= ANGULAR_RAMP_UP_STEP * dt;
+    if (angularVelocity < ANGULAR_ELLIPSIS) { angularVelocity = 0; }
+  } else if (angularVelocity < -ANGULAR_ELLIPSIS) {
+    #ifdef DEBUG
+    webSocket.broadcastTXT("breaking left rotation");
+    #endif
+
+    setCounterClockwiseMotorRotation(angularVelocity);
+
+    angularVelocity += ANGULAR_RAMP_UP_STEP * dt;
+    if (angularVelocity > -ANGULAR_ELLIPSIS) { angularVelocity = 0; }
+  } else */{
+    setMotorForward(linearVelocity);
+
+    linearVelocity += LINEAR_RAMP_UP_STEP * dt;
+    if (linearVelocity > 1) { linearVelocity = 1; }
+
+    didDriveForward = true;
+  }
+
+  return didDriveForward;
 }
 
-int16_t getAngleToTargetVector()
+float getAngleToTargetVector()
 {
-  int16_t result = atan2(1, 0) - atan2(targetPositionY, targetPositionX);
+  float result = atan2(1, 0) - atan2(targetPositionY, targetPositionX);
   if (result > PI)
   {
     result -= 2 * PI;
@@ -137,34 +232,112 @@ float getTargetVectorLength()
   return sqrt(targetPositionX * targetPositionX + targetPositionY * targetPositionY);
 }
 
-void moveToTarget()
+template <typename type>
+type sign(type value) {
+ return type((value > 0) - (value < 0));
+}
+
+void rotateTargetPosition(float angle) {
+  float radAngle = (float)angle / 180.0 * PI;
+  float oldTargetPositionX = targetPositionX;
+  targetPositionX = targetPositionX * cos(radAngle) - targetPositionY * sin(radAngle);
+  targetPositionY = oldTargetPositionX * sin(radAngle) + targetPositionY * cos(radAngle);
+  targetRotation -= angle;
+}
+
+void makeDirectionRotationLookCorrect(float rotationDelta) {
+  #ifdef DEBUG
+  char buffer [60];
+  sprintf(buffer, "makeDirectionRotationLookCorrect, angle to correct=%f", rotationDelta);
+  webSocket.broadcastTXT(buffer);
+  #endif
+
+  rotateTargetPosition(rotationDelta);
+}
+
+void updateTargetData(float dt) {
+  if (didRotateToDirectionLastTick) {
+    didRotateToDirectionLastTick = false;
+
+    float angle = (dt / MICROSECONDS_PER_DEGREE_ROTATING) * angularVelocity;
+
+    #ifdef DEBUG
+    char buffer [32];
+    sprintf(buffer, "rotation angle=%f", angle);
+    webSocket.broadcastTXT(buffer);
+    #endif
+
+
+    rotateTargetPosition(angle);
+  }
+
+  if (didDriveForwardLastTick) {
+    didDriveForwardLastTick = false;
+
+    targetPositionY -= (dt / MICROSECONDS_PER_MM_FORWARD) * linearVelocity;
+  }
+
+  if (didRotateToTargetLastTick) {
+    didRotateToTargetLastTick = false;
+
+    targetRotation -= (dt / MICROSECONDS_PER_DEGREE_ROTATING) * angularVelocity;
+  }
+}
+
+void moveToTarget(float dt, float distance)
 {
-  float distance = getTargetVectorLength();
+  #ifdef DEBUG
+  char buffer [512];
+  sprintf(
+    buffer,
+    "move to target\n distance=%f\n dt=%f\n targetPositionX=%f\n targetPositionY=%f\n targetRotation=%f\n angularVelocity=%f\n linearVelocity=%f",
+    distance,
+    dt,
+    targetPositionX,
+    targetPositionY,
+    targetRotation,
+    angularVelocity,
+    linearVelocity
+  );
+  webSocket.broadcastTXT(buffer);
+  #endif
+
+  updateTargetData(dt);
 
   if (distance > MIN_DISTANCE_TO_TARGET)
   {
-    int16_t rotationDelta = getAngleToTargetVector();
-    if (abs(rotationDelta) > MIN_ROTATION_DELTA)
+    float rotationDelta = getAngleToTargetVector();
+
+    #ifdef DEBUG
+    char buffer [20];
+    sprintf(buffer, "rotationDelta=%f", rotationDelta);
+    webSocket.broadcastTXT(buffer);
+    #endif
+
+    if (fabs(rotationDelta) > MIN_ROTATION_DELTA)
     {
-      // look at target
-      rotateToAngle(rotationDelta % MAX_ROTATION_PER_TICK);
+      didRotateToDirectionLastTick = rotateToAngle(dt, rotationDelta);
     }
     else
     {
-      // move to target
-      driveForward((int)distance % MAX_DISTANCE_PER_TICK);
+      if (fabs(rotationDelta) > 0.0001) { // it's good enough
+          makeDirectionRotationLookCorrect(rotationDelta);
+      }
+
+      didDriveForwardLastTick = driveForward(dt);
     }
   }
   else
   {
-    if (abs(targetRotation) > MIN_ROTATION_DELTA)
+    if (fabs(targetRotation) > MIN_ROTATION_DELTA)
     {
-      // rotate to targetrotation
-      rotateToAngle(targetRotation % MAX_ROTATION_PER_TICK);
+      didRotateToTargetLastTick = rotateToAngle(dt, targetRotation);
     }
     else
     {
-      // Turtle arrived at destination
+      #ifdef DEBUG
+      webSocket.broadcastTXT("Turtle arrived at destination");
+      #endif
     }
   }
 }
@@ -339,6 +512,8 @@ void handleFileUpload()
 
 void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t lenght)
 { // When a WebSocket message is received
+  char * pEnd;
+
   switch (type)
   {
   case WStype_DISCONNECTED: // if the websocket is disconnected
@@ -357,9 +532,9 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t lenght)
     Serial.printf("[%u] get Text: %s\n", num, payload);
     if (payload[0] == '>')
     {
-      targetPositionX = (int16_t)strtol((const char *)&payload[1], NULL, 16);
-      targetPositionY = (int16_t)strtol((const char *)&payload[2], NULL, 16);
-      targetRotation = (int16_t)strtol((const char *)&payload[3], NULL, 16);
+      targetPositionX = (float)strtol((const char *)&payload[1], &pEnd, 16);
+      targetPositionY = (float)strtol(pEnd, &pEnd, 16);
+      targetRotation = (float)strtol(pEnd, NULL, 16);
       Serial.print("go to ");
       Serial.print(targetPositionX);
       Serial.print(":");
@@ -386,6 +561,11 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t lenght)
         M2.setmotor(_SHORT_BRAKE);
         M1.setmotor(_STOP);
         M2.setmotor(_STOP);
+
+        angularVelocity = 0;
+        linearVelocity = 0;
+        targetPositionX = 0;
+        targetRotation = 0;
       }
       else if (dir == '1')
       {
@@ -394,11 +574,11 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t lenght)
         Serial.print(" ");
         Serial.println(amount);
 
-        M1.setmotor(_CCW, 50);
-        M2.setmotor(_CW, 50);
+        M1.setmotor(_CW, 50);
+        M2.setmotor(_CCW, 50);
         delay(10);
-        M1.setmotor(_CCW, pwmPerVelocity[velocity]);
-        M2.setmotor(_CW, pwmPerVelocity[velocity]);
+        M1.setmotor(_CW, pwmPerVelocity[velocity]);
+        M2.setmotor(_CCW, pwmPerVelocity[velocity]);
         motorStopTime = millis() + getRotationTime(velocity, amount);
       }
       else if (dir == '2')
@@ -408,11 +588,11 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t lenght)
         Serial.print(" ");
         Serial.println(amount);
 
-        M1.setmotor(_CW, 50);
-        M2.setmotor(_CCW, 50);
+        M1.setmotor(_CCW, 50);
+        M2.setmotor(_CW, 50);
         delay(10);
-        M1.setmotor(_CW, pwmPerVelocity[velocity]);
-        M2.setmotor(_CCW, pwmPerVelocity[velocity]);
+        M1.setmotor(_CCW, pwmPerVelocity[velocity]);
+        M2.setmotor(_CW, pwmPerVelocity[velocity]);
         motorStopTime = millis() + getRotationTime(velocity, amount);
       }
       else if (dir == '3')
@@ -422,11 +602,11 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t lenght)
         Serial.print(" ");
         Serial.println(amount);
 
-        M1.setmotor(_CW, 50);
-        M2.setmotor(_CW, 50);
+        M1.setmotor(_CCW, 50);
+        M2.setmotor(_CCW, 50);
         delay(10);
-        M1.setmotor(_CW, pwmPerVelocity[velocity]);
-        M2.setmotor(_CW, pwmPerVelocity[velocity]);
+        M1.setmotor(_CCW, pwmPerVelocity[velocity]);
+        M2.setmotor(_CCW, pwmPerVelocity[velocity]);
         motorStopTime = millis() + getMovementTime(velocity, amount);
       }
       else if (dir == '4')
@@ -436,11 +616,11 @@ void webSocketEvent(uint8_t num, WStype_t type, uint8_t *payload, size_t lenght)
         Serial.print(" ");
         Serial.println(amount);
 
-        M1.setmotor(_CCW, 50);
-        M2.setmotor(_CCW, 50);
+        M1.setmotor(_CW, 50);
+        M2.setmotor(_CW, 50);
         delay(10);
-        M1.setmotor(_CCW, pwmPerVelocity[velocity]);
-        M2.setmotor(_CCW, pwmPerVelocity[velocity]);
+        M1.setmotor(_CW, pwmPerVelocity[velocity]);
+        M2.setmotor(_CW, pwmPerVelocity[velocity]);
         motorStopTime = millis() + getMovementTime(velocity, amount);
       }
 
@@ -538,22 +718,35 @@ void loop()
     delay(100);
     M2.setmotor(_STOP);
     M1.setmotor(_STOP);
+
+    angularVelocity = 0;
+    linearVelocity = 0;
   }
 
-  if (abs(targetPositionX) > 0 || abs(targetPositionY) > 0 || abs(targetRotation) > 0)
-  {
-    isMoving = true;
 
-    moveToTarget();
+  unsigned long now = micros();
+  float dt;
+  if (lastMovementTime > 0) {
+    dt = (now - lastMovementTime);
+  } else {
+    dt = 0;
   }
-  else if (isMoving)
-  {
-    isMoving = false;
+  lastMovementTime = now;
 
+  float distance = getTargetVectorLength();
+  if (distance > MIN_DISTANCE_TO_TARGET || fabs(targetRotation) > MIN_ROTATION_DELTA)
+  {
+    moveToTarget(dt, distance);
+  }
+  else
+  {
     M2.setmotor(_SHORT_BRAKE);
     M1.setmotor(_SHORT_BRAKE);
     delay(100);
     M2.setmotor(_STOP);
     M1.setmotor(_STOP);
+
+    angularVelocity = 0;
+    linearVelocity = 0;
   }
 }
