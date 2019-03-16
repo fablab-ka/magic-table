@@ -61,8 +61,8 @@ float linearVelocity = 0;
 
 float MIN_DISTANCE_TO_TARGET = 20;
 float MIN_ROTATION_DELTA = 15;
-float MICROSECONDS_PER_MM_FORWARD = 1000;
-float MICROSECONDS_PER_DEGREE_ROTATING = 800;
+float MICROSECONDS_PER_MM_FORWARD = 2000;
+float MICROSECONDS_PER_DEGREE_ROTATING = 2700;
 float ANGULAR_ELLIPSIS = 0.05;
 float LINEAR_ELLIPSIS = 0.05;
 float ANGULAR_RAMP_UP_STEP = 0.00001;
@@ -92,25 +92,27 @@ unsigned long getRotationTime(int velocity, int rotationAmount)
   return secondsPerFullTurn[velocity] * rotationFactor * 1000;
 }
 
+float calculatePWMForVelocity(float velocity) {
+  return velocity * (COMMAND_PWM - MIN_PWM) + MIN_PWM;
+}
+
 void setClockwiseMotorRotation(float velocity) {
-  M1.setmotor(_CCW, velocity * (COMMAND_PWM - MIN_PWM) + MIN_PWM);
-  M2.setmotor(_CW, velocity * (COMMAND_PWM - MIN_PWM) + MIN_PWM);
+  M1.setmotor(_CCW, calculatePWMForVelocity(velocity));
+  M2.setmotor(_CW, calculatePWMForVelocity(velocity));
 }
 
 void setCounterClockwiseMotorRotation(float velocity) {
-  M1.setmotor(_CW, -velocity * (COMMAND_PWM - MIN_PWM) + MIN_PWM);
-  M2.setmotor(_CCW, -velocity * (COMMAND_PWM - MIN_PWM) + MIN_PWM);
+  M1.setmotor(_CW, -calculatePWMForVelocity(velocity));
+  M2.setmotor(_CCW, -calculatePWMForVelocity(velocity));
 }
 
 void setMotorForward(float velocity) {
-  M1.setmotor(_CCW, -velocity * (COMMAND_PWM - MIN_PWM) + MIN_PWM);
-  M2.setmotor(_CCW, -velocity * (COMMAND_PWM - MIN_PWM) + MIN_PWM);
+  M1.setmotor(_CCW, -calculatePWMForVelocity(velocity));
+  M2.setmotor(_CCW, -calculatePWMForVelocity(velocity));
 }
 
-bool rotateToAngle(float dt, float angle)
+void rotateToAngle(float dt, float angle)
 {
-  bool didRotate = false;
-
   #ifdef DEBUG
   char buffer [40];
   sprintf(buffer, "rotate to angle\n angle=%f", angle);
@@ -118,98 +120,93 @@ bool rotateToAngle(float dt, float angle)
   #endif
 
   int amount = fabs(angle) / 360 * 255;
-  /*if (linearVelocity > LINEAR_ELLIPSIS) {
+  if (linearVelocity > LINEAR_ELLIPSIS) {
     #ifdef DEBUG
     webSocket.broadcastTXT("breaking linear velocity");
     #endif
 
-    setMotorForward(linearVelocity);
+    linearVelocity = 0;
 
-    linearVelocity -= LINEAR_RAMP_UP_STEP * dt;
-    if (linearVelocity < 0) { linearVelocity = 0; }
+    M1.setmotor(_SHORT_BRAKE);
+    M2.setmotor(_SHORT_BRAKE);
+    M1.setmotor(_STOP);
+    M2.setmotor(_STOP);
   }
-  else */if (angle > 0)
+
+  if (angle > 0)
   {
-    /*if (angularVelocity < -ANGULAR_ELLIPSIS) {
+    if (angularVelocity < -ANGULAR_ELLIPSIS) {
       #ifdef DEBUG
       webSocket.broadcastTXT("breaking angular left rotation");
       #endif
 
-      setCounterClockwiseMotorRotation(angularVelocity);
-    } else */{
-      #ifdef DEBUG
-      webSocket.broadcastTXT("rotating right");
-      #endif
+      angularVelocity = 0;
 
-      setClockwiseMotorRotation(angularVelocity);
+      M1.setmotor(_SHORT_BRAKE);
+      M2.setmotor(_SHORT_BRAKE);
+      M1.setmotor(_STOP);
+      M2.setmotor(_STOP);
     }
 
-    angularVelocity += ANGULAR_RAMP_UP_STEP * dt;
-    if (angularVelocity > 1) { angularVelocity = 1; }
-
-    didRotate = true;
-  }
-  else
-  {
-    /*if (angularVelocity > ANGULAR_ELLIPSIS) {
-      #ifdef DEBUG
-      webSocket.broadcastTXT("breaking angular right rotation");
-      #endif
-
-      setClockwiseMotorRotation(angularVelocity);
-    } else */{
-      #ifdef DEBUG
-      webSocket.broadcastTXT("rotating left");
-      #endif
-
-      setCounterClockwiseMotorRotation(angularVelocity);
-    }
-
-    angularVelocity -= ANGULAR_RAMP_UP_STEP * dt;
-    if (angularVelocity < -1) { angularVelocity = -1; }
-
-    didRotate = true;
-  }
-
-  return didRotate;
-}
-
-bool driveForward(float dt)
-{
-  bool didDriveForward = false;
-
-  #ifdef DEBUG
-  webSocket.broadcastTXT("drive forward");
-  #endif
-
-  /*if (angularVelocity > ANGULAR_ELLIPSIS) {
     #ifdef DEBUG
-    webSocket.broadcastTXT("breaking right rotation");
+    webSocket.broadcastTXT("rotating right");
     #endif
 
     setClockwiseMotorRotation(angularVelocity);
 
-    angularVelocity -= ANGULAR_RAMP_UP_STEP * dt;
-    if (angularVelocity < ANGULAR_ELLIPSIS) { angularVelocity = 0; }
-  } else if (angularVelocity < -ANGULAR_ELLIPSIS) {
+    angularVelocity += ANGULAR_RAMP_UP_STEP * dt;
+    if (angularVelocity > 1) { angularVelocity = 1; }
+  }
+  else
+  {
+    if (angularVelocity > ANGULAR_ELLIPSIS) {
+      #ifdef DEBUG
+      webSocket.broadcastTXT("breaking angular right rotation");
+      #endif
+
+      angularVelocity = 0;
+
+      M1.setmotor(_SHORT_BRAKE);
+      M2.setmotor(_SHORT_BRAKE);
+      M1.setmotor(_STOP);
+      M2.setmotor(_STOP);
+    }
+
     #ifdef DEBUG
-    webSocket.broadcastTXT("breaking left rotation");
+    webSocket.broadcastTXT("rotating left");
     #endif
 
     setCounterClockwiseMotorRotation(angularVelocity);
 
-    angularVelocity += ANGULAR_RAMP_UP_STEP * dt;
-    if (angularVelocity > -ANGULAR_ELLIPSIS) { angularVelocity = 0; }
-  } else */{
-    setMotorForward(linearVelocity);
 
-    linearVelocity += LINEAR_RAMP_UP_STEP * dt;
-    if (linearVelocity > 1) { linearVelocity = 1; }
+    angularVelocity -= ANGULAR_RAMP_UP_STEP * dt;
+    if (angularVelocity < -1) { angularVelocity = -1; }
+  }
+}
 
-    didDriveForward = true;
+void driveForward(float dt)
+{
+  #ifdef DEBUG
+  webSocket.broadcastTXT("drive forward");
+  #endif
+
+  if (fabs(angularVelocity) > ANGULAR_ELLIPSIS) {
+    #ifdef DEBUG
+    webSocket.broadcastTXT("breaking right rotation");
+    #endif
+
+    angularVelocity = 0;
+
+    M1.setmotor(_SHORT_BRAKE);
+    M2.setmotor(_SHORT_BRAKE);
+    M1.setmotor(_STOP);
+    M2.setmotor(_STOP);
   }
 
-  return didDriveForward;
+  setMotorForward(linearVelocity);
+
+  linearVelocity += LINEAR_RAMP_UP_STEP * dt;
+  if (linearVelocity > 1) { linearVelocity = 1; }
 }
 
 float getAngleToTargetVector()
@@ -259,7 +256,7 @@ void updateTargetData(float dt) {
   if (didRotateToDirectionLastTick) {
     didRotateToDirectionLastTick = false;
 
-    float angle = (dt / MICROSECONDS_PER_DEGREE_ROTATING) * angularVelocity;
+    float angle = (dt / MICROSECONDS_PER_DEGREE_ROTATING) * angularVelocity*angularVelocity; //EXPERIMENT with expontential velocity
 
     #ifdef DEBUG
     char buffer [32];
@@ -267,20 +264,19 @@ void updateTargetData(float dt) {
     webSocket.broadcastTXT(buffer);
     #endif
 
-
     rotateTargetPosition(angle);
   }
 
   if (didDriveForwardLastTick) {
     didDriveForwardLastTick = false;
 
-    targetPositionY -= (dt / MICROSECONDS_PER_MM_FORWARD) * linearVelocity;
+    targetPositionY -= (dt / MICROSECONDS_PER_MM_FORWARD) * linearVelocity*linearVelocity; //EXPERIMENT with expontential velocity
   }
 
   if (didRotateToTargetLastTick) {
     didRotateToTargetLastTick = false;
 
-    targetRotation -= (dt / MICROSECONDS_PER_DEGREE_ROTATING) * angularVelocity;
+    targetRotation -= (dt / MICROSECONDS_PER_DEGREE_ROTATING) * angularVelocity*angularVelocity; //EXPERIMENT with expontential velocity
   }
 }
 
@@ -316,7 +312,8 @@ void moveToTarget(float dt, float distance)
 
     if (fabs(rotationDelta) > MIN_ROTATION_DELTA)
     {
-      didRotateToDirectionLastTick = rotateToAngle(dt, rotationDelta);
+      rotateToAngle(dt, rotationDelta);
+      didRotateToDirectionLastTick = true;
     }
     else
     {
@@ -324,14 +321,16 @@ void moveToTarget(float dt, float distance)
           makeDirectionRotationLookCorrect(rotationDelta);
       }
 
-      didDriveForwardLastTick = driveForward(dt);
+      driveForward(dt);
+      didDriveForwardLastTick = true;
     }
   }
   else
   {
     if (fabs(targetRotation) > MIN_ROTATION_DELTA)
     {
-      didRotateToTargetLastTick = rotateToAngle(dt, targetRotation);
+      rotateToAngle(dt, targetRotation);
+      didRotateToTargetLastTick = true;
     }
     else
     {
