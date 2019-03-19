@@ -31,7 +31,7 @@ export default class TurtleController {
 
   constructor(store: Store, turtleHostname: string) {
     this.store = store;
-    this.turtleURL = `ws://${turtleHostname}:81/`;
+    this.turtleURL = turtleHostname;
 
     store.subscribe(this.onStateChange.bind(this));
   }
@@ -40,33 +40,33 @@ export default class TurtleController {
     console.log("[TurtleController] trying to connect");
 
     this.connection = new WebSocket(this.turtleURL, this.turtleProtocols);
-    this.connection.onopen = this.onConnectionOpen.bind(this);
-    this.connection.onerror = this.onConnectionError.bind(this);
-    this.connection.onmessage = this.onConnectionMessage.bind(this);
-    this.connection.onclose = this.onConnectionClose.bind(this);
+    this.connection.onopen = this.onConnectionOpen;
+    this.connection.onerror = this.onConnectionError;
+    this.connection.onmessage = this.onConnectionMessage;
+    this.connection.onclose = this.onConnectionClose;
   }
 
-  private onConnectionOpen() {
+  private onConnectionOpen = () => {
     if (this.connection) {
       this.connection.send("Connect " + new Date());
     }
-  }
+  };
 
-  private onConnectionError(error: Event) {
+  private onConnectionError = (error: Event) => {
     console.log("[TurtleController] WebSocket Error ", error);
-  }
+  };
 
-  private onConnectionMessage(e: MessageEvent) {
+  private onConnectionMessage = (e: MessageEvent) => {
     console.log("[TurtleController] Server: ", e.data);
-  }
+  };
 
-  private onConnectionClose() {
+  private onConnectionClose = () => {
     console.log("[TurtleController] WebSocket connection closed");
 
     setTimeout(() => {
       this.connect();
     }, CONNECTION_TIMEOUT_INTERVAL);
-  }
+  };
 
   private onStateChange() {
     const connectionIsOpen =
