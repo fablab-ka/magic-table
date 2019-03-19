@@ -16,7 +16,7 @@ class FrameProcessor:
         self.marker_length_in_meter = 0.04
         self.projector_to_camera_offset = np.array([0, 0, 0])
 
-        self.debug = False
+        self.debug = True
 
         self.dist_coeffs = calibration['dist_coeffs']
         self.camera_matrix = calibration['camera_matrix']
@@ -54,7 +54,6 @@ class FrameProcessor:
                 (1920, 1080)
             )
 
-            # result = self.calculate_transforms(markers, ids)
             for i in range(len(markers)):
                 # imgpts = cv2.perspectiveTransform(
                 #     markers[i], projector_homography)
@@ -68,7 +67,7 @@ class FrameProcessor:
                     marker_points.append(warped_point)
 
                     if self.debug:
-                        cv2.circle(self.frame, tuple(warped_point.astype(int)), 2,
+                        cv2.circle(self.frame, warped_point, 2,
                                    (0, 0, 255), thickness=2)
 
                 center_point = np.sum(np.array(marker_points), axis=0)/4
@@ -90,83 +89,14 @@ class FrameProcessor:
                     'direction': direction.tolist(),
                     'rotation': math.atan2(direction[1], direction[0])
                 })
+        else:
+            self.frame = cv2.warpPerspective(
+                self.frame,
+                projector_homography,
+                (1920, 1080)
+            )
 
         if self.debug:
             cv2.imshow('frame', self.frame)
 
         return result
-
-    def calculate_transforms(self, markers, ids):
-        result = []
-
-        # rvecs, tvecs, points = cv2.aruco.estimatePoseSingleMarkers(
-        #     markers,
-        #     self.marker_length_in_meter,
-        #     self.camera_matrix,
-        #     self.dist_coeffs
-        # )
-        # # todo matrix multiplication with calibration matrix
-        # tvecs += self.projector_to_camera_offset
-
-        result = []
-        # print(ids)
-        for i in range(len(markers)):
-            # result.append(self.marker_to_transform_data(
-            #   points, rvecs[i], tvecs[i], ids[i]))
-            imgpts = cv2.perspectiveTransform(
-                markers[i], inv(projector_homography))
-            result.append({
-                'marker': imgpts[0].tolist(),
-                'ids': ids[i].tolist()
-            })
-
-        return result
-
-    def toMarkerData(self, imgpts, idlist, transform, position2d, rotation2D):
-        return {
-            'marker': imgpts.tolist(),
-            'ids': idlist.tolist(),
-            'transform': transform.tolist(),
-            'position2d': position2d,
-            'rotation2d': rotation2D
-        }
-
-    def projectPoints(self, points, rvec, tvec):
-        imgpts, jac = cv2.projectPoints(
-            points, rvec, tvec, self.camera_matrix, self.dist_coeffs
-        )
-        return imgpts
-
-    def getPerspectiveTransform(self, imgpts):
-        width, height = 400, 400  # 0.04 * pixel_per_meter, 0.04 * pixel_per_meter
-        transform = cv2.getPerspectiveTransform(
-            np.array(
-                [
-                    [0, 0],
-                    [width, 0],
-                    [width, height],
-                    [0, height]
-                ],
-                np.float32
-            ),
-            imgpts
-        )
-
-        return transform
-
-    def calculate_position_2d(self, transform):
-        return (0, 0)
-
-    def calculate_rotation_2d(self, transform):
-        return 0
-
-    def marker_to_transform_data(self, points, rvec, tvec, idlist):
-        imgpts = self.projectPoints(points, rvec, tvec)
-        # self.getPerspectiveTransform(imgpts)
-        transform = np.eye(3, 3)
-        position2d = self.calculate_position_2d(transform)
-        rotation2d = self.calculate_rotation_2d(transform)
-
-        imgpts = cv2.perspectiveTransform(imgpts, inv(projector_homography))
-
-        return self.toMarkerData(imgpts, idlist, transform, position2d, rotation2d)

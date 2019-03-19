@@ -14,7 +14,7 @@ import TurtleController from "./turtle-controller";
 
 const debugPanel = document.getElementById("debug-output");
 
-const TURTLE_HOST_NAME = "magicrobot.flka.space";
+const TURTLE_HOST_NAME = "magicrobot3.flka.space";
 
 export default class MainGame {
   private communication: GameCommunication;

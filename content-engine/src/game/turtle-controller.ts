@@ -53,15 +53,15 @@ export default class TurtleController {
   }
 
   private onConnectionError(error: Event) {
-    console.log("WebSocket Error ", error);
+    console.log("[TurtleController] WebSocket Error ", error);
   }
 
   private onConnectionMessage(e: MessageEvent) {
-    console.log("Server: ", e.data);
+    console.log("[TurtleController] Server: ", e.data);
   }
 
   private onConnectionClose() {
-    console.log("WebSocket connection closed");
+    console.log("[TurtleController] WebSocket connection closed");
 
     setTimeout(() => {
       this.connect();
@@ -93,32 +93,60 @@ export default class TurtleController {
         targetPosition.y - currentPosition[1]
       ];
 
-      const distance = this.getDistance(movementVector);
+      const rotationDelta = this.getRelativeRotation(
+        currentRotation,
+        targetRotation
+      );
 
-      if (distance > MIN_DISTANCE_TO_TARGET) {
-        const rotationDelta = this.getAngleBetween(
-          movementVector,
-          currentDirection
-        );
-        if (Math.abs(rotationDelta) > MIN_ROTATION_DELTA) {
-          // look at target
-          this.rotateToAngle(rotationDelta);
-        } else {
-          // move to target
-          this.sendMovement(
-            TurtleDirection.Forward,
-            distance,
-            MOVEMENT_VELOCITY
-          );
-        }
+      this.sendTarget(movementVector, rotationDelta);
+
+      /*
+      this.executemovementAlgorithm(
+        currentDirection,
+        movementVector,
+        currentRotation,
+        targetRotation
+      );*/
+    }
+  }
+
+  private getRelativeRotation(current: number, target: number) {
+    let result = target - current;
+
+    if (result > 180) {
+      result = 360 - result;
+    }
+
+    return result;
+  }
+
+  private executemovementAlgorithm(
+    currentDirection: Vector,
+    movementVector: Vector,
+    currentRotation: number,
+    targetRotation: number
+  ) {
+    const distance = this.getDistance(movementVector);
+
+    if (distance > MIN_DISTANCE_TO_TARGET) {
+      const rotationDelta = this.getAngleBetween(
+        movementVector,
+        currentDirection
+      );
+      if (Math.abs(rotationDelta) > MIN_ROTATION_DELTA) {
+        // look at target
+        this.rotateToAngle(rotationDelta);
       } else {
-        // TODo rotate to taretrotation
-        const rotationDelta = targetRotation - currentRotation;
-        if (Math.abs(rotationDelta) > MIN_ROTATION_DELTA) {
-          this.rotateToAngle(rotationDelta);
-        } else {
-          // Turtle arrived at destination
-        }
+        // move to target
+        this.sendMovement(TurtleDirection.Forward, distance, MOVEMENT_VELOCITY);
+      }
+    } else {
+      // ToDo rotate to targetrotation
+      const rotationDelta = targetRotation - currentRotation;
+      if (Math.abs(rotationDelta) > MIN_ROTATION_DELTA) {
+        this.rotateToAngle(rotationDelta);
+      } else {
+        // Turtle arrived at destination
       }
     }
   }
@@ -162,8 +190,24 @@ export default class TurtleController {
     if (this.connection) {
       const amountText = Math.round(amount).toString(16);
       const commandstr = `#${direction}${velocity}#${amountText}`;
-      console.log(`Sending movement command: ${commandstr}`);
+      console.log(`[TurtleController] Sending movement command: ${commandstr}`);
       this.connection.send(commandstr);
+    }
+  }
+
+  private sendTarget(
+    relativeTargetPosition: Vector,
+    relativeTargetRotation: number
+  ) {
+    if (this.connection) {
+      const targetPosX = relativeTargetPosition[0].toString(16);
+      const targetPosY = relativeTargetPosition[1].toString(16);
+      const targetRot = relativeTargetRotation.toString(16);
+      const commandstr = `>${targetPosX} ${targetPosY} ${targetRot}`;
+      console.log(`[TurtleController] Sending target command: ${commandstr}`);
+      this.connection.send(commandstr);
+    } else {
+      console.log("[TurtleController] No connection yet");
     }
   }
 }
