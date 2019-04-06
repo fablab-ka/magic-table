@@ -11,12 +11,12 @@ pixel_per_meter = 100/0.102
 
 
 class FrameProcessor:
-    def __init__(self, calibration):
-        self.camera_index = 2
+    def __init__(self, calibration: dict, camera_index: int = 0, debug_mode: bool = False):
+        self.camera_index = camera_index
         self.marker_length_in_meter = 0.04
         self.projector_to_camera_offset = np.array([0, 0, 0])
 
-        self.debug = True
+        self.debug = debug_mode
 
         self.dist_coeffs = calibration['dist_coeffs']
         self.camera_matrix = calibration['camera_matrix']
@@ -33,6 +33,8 @@ class FrameProcessor:
 
     def init_camera(self):
         self.cap = cv2.VideoCapture(self.camera_index)
+        if self.cap is None or not self.cap.isOpened():
+            raise RuntimeError(f"Unable to open video source! (camera index: {self.camera_index})")
         self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
         self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
 

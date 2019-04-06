@@ -28,6 +28,8 @@ export default class TurtleController {
   private connection?: WebSocket;
   private turtleURL: string;
   private turtleProtocols = ["arduino"];
+  private lastChange: number = 0;
+  private updateInterval: number = 100;
 
   constructor(store: Store, turtleHostname: string) {
     this.store = store;
@@ -75,9 +77,14 @@ export default class TurtleController {
       return;
     }
 
+    if ((Date.now() - this.lastChange) < this.updateInterval) {
+      return;
+    }
+    this.lastChange = Date.now();
+
     const state = this.store.getState();
     const targetPosition = getTurtleTargetPosition(state);
-    const targetRotation = getTurtleTargetRotation(state);
+    const targetRotation = Math.PI;//getTurtleTargetRotation(state);
     const currentRotation = getTurtleMarkerRotation(state);
     const currentPosition = getTurtleMarkerPosition(state);
     const currentDirection = getTurtleMarkerDirection(state);
@@ -94,8 +101,8 @@ export default class TurtleController {
       ];
 
       const rotationDelta = this.getRelativeRotation(
-        currentRotation,
-        targetRotation
+        this.toDegree(currentRotation),
+        this.toDegree(targetRotation)
       );
 
       this.sendTarget(movementVector, rotationDelta);
@@ -110,11 +117,15 @@ export default class TurtleController {
     }
   }
 
+  private toDegree(radian: number) {
+    return (radian * 180/Math.PI) + 180;
+  }
+
   private getRelativeRotation(current: number, target: number) {
     let result = target - current;
 
     if (result > 180) {
-      result = 360 - result;
+      result = -(360 - result);
     }
 
     return result;

@@ -12,6 +12,9 @@ clients = []
 server = None
 server_running = False
 
+debug = False
+cam_index = 1
+
 
 def send_transforms(clients, transforms):
     message = json.dumps(transforms)
@@ -23,7 +26,7 @@ def start_camera_analysis():
     print("Starting Camera Analysis")
 
     calibration = np.load('./calibration_1080.npz')
-    frame_processor = FrameProcessor(calibration)
+    frame_processor = FrameProcessor(calibration, camera_index=cam_index, debug_mode=debug)
     frame_processor.init_camera()
 
     while server_running:
@@ -66,11 +69,12 @@ def run_server():
 
     server_running = True
 
-    analysis_thread = threading.Thread(target=start_camera_analysis)
+    analysis_thread = threading.Thread(target=start_camera_analysis, daemon=True)
     analysis_thread.start()
 
     try:
-        server.serveforever()
+        while analysis_thread.isAlive():
+            server.serveonce()
     except KeyboardInterrupt:
         server_running = False
         analysis_thread.join()
