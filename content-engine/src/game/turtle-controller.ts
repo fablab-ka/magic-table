@@ -30,6 +30,7 @@ export default class TurtleController {
   private turtleProtocols = ["arduino"];
   private lastChange: number = 0;
   private updateInterval: number = 100;
+  private pixelToRobotCoordinates = 0.1;
 
   constructor(store: Store, turtleHostname: string) {
     this.store = store;
@@ -83,7 +84,7 @@ export default class TurtleController {
     this.lastChange = Date.now();
 
     const state = this.store.getState();
-    const targetPosition = getTurtleTargetPosition(state);
+    const targetPosition = { x: 500, y: 500 };//getTurtleTargetPosition(state);
     const targetRotation = Math.PI;//getTurtleTargetRotation(state);
     const currentRotation = getTurtleMarkerRotation(state);
     const currentPosition = getTurtleMarkerPosition(state);
@@ -95,10 +96,10 @@ export default class TurtleController {
       typeof currentDirection !== "undefined" &&
       typeof targetPosition !== "undefined"
     ) {
-      const movementVector: Vector = [
+      const movementVector: Vector = this.toRobotSpace([
         targetPosition.x - currentPosition[0],
         targetPosition.y - currentPosition[1]
-      ];
+      ]);
 
       const rotationDelta = this.getRelativeRotation(
         this.toDegree(currentRotation),
@@ -115,6 +116,13 @@ export default class TurtleController {
         targetRotation
       );*/
     }
+  }
+
+  private toRobotSpace(pos: [number,number]): Vector {
+    return [
+      pos[0] * this.pixelToRobotCoordinates,
+      pos[1] * this.pixelToRobotCoordinates
+    ];
   }
 
   private toDegree(radian: number) {
